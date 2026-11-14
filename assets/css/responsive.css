@@ -1,0 +1,126 @@
+/* ============================================================
+   UMRAH BUILDER — RESPONSIVE CSS
+   All media queries + print styles
+   ============================================================ */
+
+@media (max-width: 1200px) {
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .charts-row { grid-template-columns: 1fr; }
+  .content-row { grid-template-columns: 1fr; }
+  .an-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .an-charts-row { grid-template-columns: 1fr; }
+  .an-breakdown-row { grid-template-columns: 1fr; }
+  .car-rates-grid { grid-template-columns: repeat(2, 1fr); }
+  .zy-car-rates-row { grid-template-columns: repeat(2, 1fr); }
+  .hotel-room-row { grid-template-columns: 42px repeat(6, minmax(0, 1fr)) 34px; gap: 8px; }
+  .hotel-room-row > .rn { grid-column: 1; grid-row: 1 / span 2; }
+  .hotel-room-row > .room-type { grid-column: 2; grid-row: 1; }
+  .hotel-room-row > .room-adults { grid-column: 3; grid-row: 1; }
+  .hotel-room-row > .room-nights { grid-column: 4; grid-row: 1; }
+  .hotel-room-row > .room-vendor-rate { grid-column: 5; grid-row: 1; }
+  .hotel-room-row > .room-sell-rate { grid-column: 6; grid-row: 1; }
+  .hotel-room-row > .room-meal-rate { grid-column: 7; grid-row: 1; }
+  .hotel-room-row > .room-meal { grid-column: 2 / span 2; grid-row: 2; }
+  .hotel-room-row > .room-total { grid-column: 4 / span 4; grid-row: 2; }
+  .hotel-room-row .rr-btn { grid-column: 8; grid-row: 2; width: 34px; justify-self: end; }
+  .hotel-rooms-total { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .expense-category-grid { grid-template-columns: repeat(2, 1fr); }
+  .doc-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 900px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .room-rate-grid { grid-template-columns: repeat(2, 1fr); }
+  .summary-grid { grid-template-columns: repeat(2, 1fr); }
+  .img-grid { grid-template-columns: repeat(2, 1fr); }
+  .hotel-room-row { grid-template-columns: 42px repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .hotel-room-row > .rn { grid-column: 1; grid-row: 1 / span 4; }
+  .hotel-room-row > .room-type { grid-column: 2; grid-row: 1; }
+  .hotel-room-row > .room-adults { grid-column: 3; grid-row: 1; }
+  .hotel-room-row > .room-nights { grid-column: 2; grid-row: 2; }
+  .hotel-room-row > .room-vendor-rate { grid-column: 3; grid-row: 2; }
+  .hotel-room-row > .room-sell-rate { grid-column: 2; grid-row: 3; }
+  .hotel-room-row > .room-meal-rate { grid-column: 3; grid-row: 3; }
+  .hotel-room-row > .room-meal { grid-column: 2; grid-row: 4; }
+  .hotel-room-row > .room-total { grid-column: 3; grid-row: 4; }
+  .hotel-room-row .rr-btn { grid-column: 3; grid-row: 5; width: 34px; justify-self: end; }
+  .zy-transport-item { grid-template-columns: 1fr 1fr; }
+  .doc-grid { grid-template-columns: repeat(2, 1fr); }
+  .top-performer-bonus { padding-left: 0; border-left: none; padding-top: 12px; border-top: 1px solid rgba(146,64,14,.3); width: 100%; text-align: left; }
+}
+
+@media (max-width: 768px) {
+  .app { grid-template-columns: 1fr; }
+  .sb { position: static; height: auto; flex-direction: row; overflow-x: auto; padding: 10px; gap: 4px; border-right: none; border-bottom: 1px solid var(--border); }
+  .brand { padding: 0 12px 0 0; margin-bottom: 0; }
+  .sb-section { display: none; }
+  .ni { padding: 8px 12px; white-space: nowrap; margin: 0; border-radius: 8px; }
+  .ni .badge { display: none; }
+  .profile-box { display: none; }
+  .mn { padding: 16px 16px 140px; }
+  .stats-row { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .an-kpi-grid { grid-template-columns: 1fr 1fr; }
+  .summary-grid { grid-template-columns: 1fr 1fr; }
+  .toast { bottom: 100px; right: 16px; left: 16px; max-width: none; }
+  .search-global { display: none; }
+  .sticky-summary { left: 0; padding: 12px 16px; }
+  .sticky-summary .ss-info { gap: 20px; overflow-x: auto; }
+  .img-grid { grid-template-columns: 1fr; }
+  .detail-grid { grid-template-columns: 1fr; }
+  .customer-row { flex-wrap: wrap; }
+  .customer-stats { width: 100%; justify-content: space-between; }
+  .hotel-stay-dates { grid-template-columns: 1fr; }
+  .hotel-rooms-total { gap: 10px; padding: 10px; }
+  .hotel-rooms-total .total-badge { width: 100%; }
+  .followup-row { flex-wrap: wrap; }
+  .car-rates-grid { grid-template-columns: 1fr 1fr; }
+  .zy-car-rates-row { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 600px) {
+  .expense-category-grid { grid-template-columns: 1fr; }
+  .doc-grid { grid-template-columns: 1fr 1fr; }
+  .top-performer-name { font-size: 20px; }
+  .top-performer-bonus .val { font-size: 22px; }
+}
+
+@media (max-width: 480px) {
+  .chatbot-fab { bottom: 75px; right: 16px; width: 56px; height: 56px; }
+  .chatbot-fab-icon { font-size: 26px; }
+  .chatbot-panel { right: 12px; left: 12px; bottom: 140px; width: auto; height: calc(100vh - 220px); max-height: 560px; }
+}
+
+/* PRINT */
+@media print {
+  body * { visibility: hidden; }
+  #invoiceModal, #invoiceModal * { visibility: visible; }
+  #invoiceModal { position: absolute; left: 0; top: 0; width: 100%; background: #fff !important; backdrop-filter: none !important; padding: 0; overflow: visible; }
+  #invoiceModal .modal { max-width: 100% !important; border-radius: 0; box-shadow: none; margin: 0; width: 100% !important; }
+  #invoiceModal .modal-head, #invoiceModal .modal-foot { display: none !important; }
+  #invoiceModal .modal-body { padding: 0 !important; max-height: none !important; overflow: visible !important; background: #fff !important; }
+  #umrahPrintArea { max-width: 190mm !important; width: 190mm !important; min-height: 0 !important; margin: 0 auto !important; display: block !important; }
+  #umrahPrintArea .quotation-content { flex: initial !important; padding-bottom: 0 !important; }
+  #umrahPrintArea .pdf-breakable { page-break-inside: auto !important; break-inside: auto !important; }
+  #umrahPrintArea .hotel-table { width: 100% !important; table-layout: fixed !important; border-collapse: collapse !important; }
+  #umrahPrintArea .hotel-table th,
+  #umrahPrintArea .hotel-table td { vertical-align: middle; overflow-wrap: anywhere; }
+  #umrahPrintArea .hotel-table tr { page-break-inside: avoid; break-inside: avoid; }
+  #umrahPrintArea .pdf-footer { position: fixed !important; left: 0; right: 0; bottom: -27mm; width: 100%; height: 24mm; margin: 0; padding: 0 5mm; display: flex; align-items: center; justify-content: center; background: #fff; page-break-inside: avoid; }
+  #umrahPrintArea .pdf-footer img { display: block; max-width: 100%; max-height: 23mm; object-fit: contain; }
+  .chatbot-fab, .chatbot-panel { display: none !important; }
+}
+
+.pdf-header, .pdf-footer { display: block; }
+#umrahPrintArea .page-break { page-break-before: always; }
+
+@page { size: A4 portrait; margin: 10mm 10mm 37mm; }
+
+@media print {
+  html, body { width: 210mm; min-height: 297mm; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  #umrahPrintArea { max-width: 190mm !important; margin: 0 auto !important; width: 190mm !important; }
+  #umrahPrintArea .pdf-two-col { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
+  #umrahPrintArea table { page-break-inside: auto; }
+  #umrahPrintArea tr { page-break-inside: avoid; page-break-after: auto; }
+  #umrahPrintArea .page-break { page-break-before: always; }
+}

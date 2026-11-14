@@ -1,0 +1,890 @@
+/* ============================================================
+   UMRAH BUILDER — BUILDER FIX CSS (Force Re-apply)
+   এই file সবার শেষে load হবে — builder modal-এর layout fix
+   ============================================================ */
+
+/* ============================================================
+   BUILDER MODAL — Force layout
+   ============================================================ */
+#builderModal .modal {
+  max-width: 1100px !important;
+}
+
+#builderModal .modal-body {
+  padding: 24px !important;
+  max-height: 80vh !important;
+}
+
+#builderModal .section {
+  margin-bottom: 16px !important;
+  background: var(--card) !important;
+  border-radius: 12px !important;
+  border: 1px solid var(--border) !important;
+  overflow: hidden !important;
+}
+
+#builderModal .section-header {
+  padding: 14px 18px !important;
+  background: var(--bg-2) !important;
+  border-bottom: 1px solid var(--border) !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 12px !important;
+  flex-wrap: wrap !important;
+}
+
+#builderModal .section-body {
+  padding: 18px !important;
+}
+
+#builderModal .section-divider {
+  font-size: 11.5px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1.2px !important;
+  margin: 18px 0 12px !important;
+  padding-bottom: 8px !important;
+  border-bottom: 1px solid var(--border) !important;
+  color: var(--text-3) !important;
+}
+
+/* ============================================================
+   FORM GRIDS — Force proper columns
+   ============================================================ */
+#builderModal .grid-2 {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 14px !important;
+}
+
+#builderModal .grid-3 {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr 1fr !important;
+  gap: 14px !important;
+}
+
+#builderModal .grid-4 {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 14px !important;
+}
+
+/* ============================================================
+   FIELD INPUTS — Force proper padding
+   ============================================================ */
+#builderModal .field {
+  margin-bottom: 12px !important;
+}
+
+#builderModal .field label {
+  display: block !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  color: var(--text-2) !important;
+  margin-bottom: 6px !important;
+}
+
+#builderModal .field input,
+#builderModal .field select,
+#builderModal .field textarea {
+  width: 100% !important;
+  padding: 10px 12px !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 9px !important;
+  font-size: 13px !important;
+  background: var(--card) !important;
+  color: var(--text) !important;
+  outline: none !important;
+  font-family: inherit !important;
+  font-weight: 500 !important;
+  box-sizing: border-box !important;
+}
+
+#builderModal .field input:focus,
+#builderModal .field select:focus,
+#builderModal .field textarea:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(249,115,22,.1) !important;
+}
+
+/* ============================================================
+   ITEM CARDS — Hotel, Flight, Transport, Visa
+   ============================================================ */
+#builderModal .item-card {
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
+  margin-bottom: 12px !important;
+}
+
+#builderModal .item-card-head {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 14px !important;
+}
+
+#builderModal .item-card-head .lbl {
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+#builderModal .remove-btn {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 7px !important;
+  border: none !important;
+  background: rgba(239,68,68,.1) !important;
+  color: var(--red) !important;
+  cursor: pointer !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all .15s !important;
+  flex-shrink: 0 !important;
+}
+
+#builderModal .remove-btn:hover {
+  background: var(--red) !important;
+  color: #fff !important;
+}
+
+/* ============================================================
+   HOTEL ROOM ROW — Force proper grid
+   ============================================================ */
+#builderModal .hotel-room-row {
+  display: grid !important;
+  grid-template-columns: 42px minmax(90px, 1.1fr) repeat(5, minmax(62px, .8fr)) minmax(96px, 1fr) minmax(132px, 1.4fr) 34px !important;
+  gap: 8px !important;
+  align-items: end !important;
+  padding: 12px !important;
+  box-sizing: border-box !important;
+  background: var(--card) !important;
+  border: 1.5px solid var(--border) !important;
+  border-radius: 10px !important;
+  margin-bottom: 8px !important;
+}
+
+#builderModal .hotel-room-row .rn {
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 9px !important;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important;
+  color: #fff !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-weight: 800 !important;
+  font-size: 12px !important;
+  line-height: 1.05 !important;
+  flex-shrink: 0 !important;
+}
+
+#builderModal .hotel-room-row .rn small {
+  font-size: 7.5px !important;
+  opacity: .85 !important;
+  letter-spacing: .5px !important;
+}
+
+#builderModal .hotel-room-row .rc {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+  min-width: 0 !important;
+}
+
+#builderModal .hotel-room-row .rc label {
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  color: var(--text-3) !important;
+  text-transform: uppercase !important;
+  letter-spacing: .4px !important;
+  white-space: normal !important;
+  line-height: 1.2 !important;
+  min-height: 22px !important;
+  display: flex !important;
+  align-items: end !important;
+  overflow-wrap: anywhere !important;
+}
+
+#builderModal .hotel-room-row .rc input,
+#builderModal .hotel-room-row .rc select {
+  padding: 8px 9px !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 7px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  outline: none !important;
+  background: var(--bg-2) !important;
+  color: var(--text) !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+#builderModal .hotel-room-row .rc input:focus,
+#builderModal .hotel-room-row .rc select:focus {
+  border-color: var(--primary) !important;
+  background: var(--card) !important;
+}
+
+#builderModal .hotel-room-row .rc input[disabled] {
+  opacity: .4 !important;
+  cursor: not-allowed !important;
+}
+
+#builderModal .hotel-room-row .rr-btn {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 8px !important;
+  border: none !important;
+  background: rgba(239,68,68,.1) !important;
+  color: var(--red) !important;
+  cursor: pointer !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all .15s !important;
+  align-self: end !important;
+}
+
+#builderModal .hotel-room-row .rr-btn:hover {
+  background: var(--red) !important;
+  color: #fff !important;
+}
+
+/* ============================================================
+   HOTEL ROOMS BLOCK + STAY DATES
+   ============================================================ */
+#builderModal .hotel-rooms-block {
+  margin-top: 14px !important;
+  padding: 14px !important;
+  background: linear-gradient(135deg, var(--primary-bg), var(--card)) !important;
+  border-radius: 12px !important;
+  border: 1px solid var(--primary-light) !important;
+}
+
+#builderModal .hotel-rooms-block .block-head {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 12px !important;
+  gap: 10px !important;
+}
+
+#builderModal .hotel-rooms-block .block-head .title {
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  color: var(--text-2) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+}
+
+#builderModal .hotel-stay-dates {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px !important;
+  margin-bottom: 12px !important;
+  padding: 12px !important;
+  background: var(--blue-bg) !important;
+  border-radius: 10px !important;
+  border-left: 3px solid var(--blue) !important;
+}
+
+#builderModal .hotel-stay-dates .date-field {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+}
+
+#builderModal .hotel-stay-dates label {
+  font-size: 9.5px !important;
+  text-transform: uppercase !important;
+  color: var(--blue) !important;
+  font-weight: 800 !important;
+  letter-spacing: .5px !important;
+}
+
+#builderModal .hotel-stay-dates input {
+  padding: 8px 10px !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  outline: none !important;
+  background: var(--card) !important;
+  color: var(--text) !important;
+}
+
+/* ============================================================
+   HOTEL ROOMS TOTAL
+   ============================================================ */
+#builderModal .hotel-rooms-total {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(100px, auto) !important;
+  gap: 14px !important;
+  align-items: center !important;
+  padding: 12px 16px !important;
+  background: linear-gradient(90deg, rgba(249,115,22,.08), rgba(59,130,246,.06)) !important;
+  border-left: 3px solid var(--primary) !important;
+  border-radius: 10px !important;
+  margin-top: 10px !important;
+  font-size: 13px !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+#builderModal .hotel-rooms-total .sub-item {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  min-width: 0 !important;
+}
+
+#builderModal .hotel-rooms-total .sub-item .lbl {
+  font-size: 9.5px !important;
+  text-transform: uppercase !important;
+  letter-spacing: .5px !important;
+  font-weight: 800 !important;
+}
+
+#builderModal .hotel-rooms-total .sub-item.sell .lbl,
+#builderModal .hotel-rooms-total .sub-item.sell .val {
+  color: var(--primary) !important;
+}
+
+#builderModal .hotel-rooms-total .sub-item.cost .lbl,
+#builderModal .hotel-rooms-total .sub-item.cost .val {
+  color: var(--blue) !important;
+}
+
+#builderModal .hotel-rooms-total .sub-item.profit .lbl,
+#builderModal .hotel-rooms-total .sub-item.profit .val {
+  color: var(--green-dark) !important;
+}
+
+#builderModal .hotel-rooms-total .sub-item .val {
+  font-size: 15px !important;
+  font-weight: 900 !important;
+  min-width: 0 !important;
+  overflow-wrap: anywhere !important;
+}
+
+#builderModal .hotel-rooms-total .sub-item .meta {
+  line-height: 1.35 !important;
+  overflow-wrap: anywhere !important;
+}
+
+#builderModal .hotel-room-row .room-total-box .sell-line .val,
+#builderModal .hotel-room-row .room-total-box .cost-line .val,
+#builderModal .hotel-room-row .room-total-box .profit-line .val {
+  min-width: 0 !important;
+  overflow-wrap: anywhere !important;
+}
+
+#builderModal .hotel-room-row .room-total-box .profit-line .val,
+#builderModal .hotel-rooms-total .sub-item.profit .val {
+  text-align: right !important;
+}
+
+#builderModal .hotel-room-row .room-total-box .profit-line.missing-cost .val,
+#builderModal .hotel-rooms-total .sub-item.profit.missing-cost .val {
+  color: var(--amber) !important;
+}
+
+#builderModal .hotel-rooms-total .total-badge {
+  padding: 8px 14px !important;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important;
+  color: #fff !important;
+  border-radius: 10px !important;
+  text-align: center !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+#builderModal .hotel-rooms-total .total-badge .lbl {
+  font-size: 9px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .5px !important;
+  opacity: .9 !important;
+}
+
+#builderModal .hotel-rooms-total .total-badge .val {
+  font-size: 17px !important;
+  font-weight: 900 !important;
+  margin-top: 2px !important;
+  display: block !important;
+  overflow-wrap: anywhere !important;
+}
+
+@media (max-width: 1200px) {
+  #builderModal .hotel-rooms-total {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  #builderModal .hotel-rooms-total {
+    gap: 10px !important;
+    padding: 10px !important;
+  }
+
+  #builderModal .hotel-rooms-total .total-badge {
+    width: 100% !important;
+  }
+}
+
+/* ============================================================
+   ZIYARAH TRANSPORT ITEM — Force proper grid
+   ============================================================ */
+#builderModal .zy-transport-item {
+  display: grid !important;
+  grid-template-columns: 1.2fr 2fr 0.8fr 1fr 40px !important;
+  gap: 10px !important;
+  align-items: end !important;
+  padding: 14px !important;
+  background: linear-gradient(135deg, var(--primary-bg), var(--card)) !important;
+  border-radius: 12px !important;
+  border: 1px solid var(--primary-light) !important;
+  margin-bottom: 10px !important;
+}
+
+#builderModal .zy-transport-item .ztf {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  min-width: 0 !important;
+}
+
+#builderModal .zy-transport-item label {
+  font-size: 9.5px !important;
+  color: var(--text-3) !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .4px !important;
+}
+
+#builderModal .zy-transport-item select,
+#builderModal .zy-transport-item input {
+  padding: 8px 10px !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 7px !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+  background: var(--card) !important;
+  outline: none !important;
+  font-family: inherit !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+#builderModal .zy-transport-item select:focus,
+#builderModal .zy-transport-item input:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(249,115,22,.1) !important;
+}
+
+#builderModal .zy-zt-total {
+  padding: 8px 12px !important;
+  background: linear-gradient(90deg, rgba(249,115,22,.15), rgba(249,115,22,.03)) !important;
+  border-left: 3px solid var(--primary) !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  color: var(--text-2) !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+}
+
+#builderModal .zy-remove-btn {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 8px !important;
+  border: none !important;
+  background: rgba(239,68,68,.1) !important;
+  color: var(--red) !important;
+  cursor: pointer !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  align-self: end !important;
+  flex-shrink: 0 !important;
+}
+
+#builderModal .zy-remove-btn:hover {
+  background: var(--red) !important;
+  color: #fff !important;
+}
+
+/* ============================================================
+   ITINERARY CARDS — Force proper layout
+   ============================================================ */
+#builderModal .itin-card {
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  margin-bottom: 10px !important;
+  transition: all .15s !important;
+}
+
+#builderModal .itin-head {
+  display: flex !important;
+  align-items: center !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+#builderModal .itin-badge {
+  background: var(--primary) !important;
+  color: #fff !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  padding: 10px 16px !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  min-width: 82px !important;
+  justify-content: center !important;
+}
+
+#builderModal .itin-title-bar {
+  flex: 1 !important;
+  background: var(--bg-2) !important;
+  padding: 10px 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-height: 44px !important;
+}
+
+#builderModal .itin-title-input {
+  flex: 1 !important;
+  background: transparent !important;
+  border: none !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  color: var(--text) !important;
+  outline: none !important;
+  font-family: inherit !important;
+  padding: 2px 0 !important;
+  min-width: 0 !important;
+}
+
+#builderModal .itin-desc {
+  padding: 14px 16px !important;
+  font-size: 13px !important;
+  line-height: 1.65 !important;
+}
+
+#builderModal .itin-desc textarea {
+  width: 100% !important;
+  border: none !important;
+  outline: none !important;
+  font-family: inherit !important;
+  font-size: 13px !important;
+  line-height: 1.65 !important;
+  color: var(--text-2) !important;
+  resize: vertical !important;
+  min-height: 40px !important;
+  background: transparent !important;
+}
+
+/* ============================================================
+   ADD BUTTONS
+   ============================================================ */
+#builderModal .add-btn {
+  width: 100% !important;
+  padding: 13px !important;
+  border: 2px dashed var(--border-2) !important;
+  border-radius: 11px !important;
+  background: transparent !important;
+  color: var(--text-2) !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all .2s !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  margin-top: 12px !important;
+  font-family: inherit !important;
+}
+
+#builderModal .add-btn:hover {
+  border-color: var(--primary) !important;
+  color: var(--primary) !important;
+  background: var(--primary-bg) !important;
+  border-style: solid !important;
+}
+
+/* ============================================================
+   EDITABLE LISTS
+   ============================================================ */
+#builderModal .item-list-editable {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+#builderModal .editable-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 8px !important;
+  background: var(--bg-2) !important;
+  border-radius: 10px !important;
+  border: 1px solid var(--border) !important;
+}
+
+#builderModal .editable-item input {
+  flex: 1 !important;
+  padding: 8px 12px !important;
+  border: 1px solid transparent !important;
+  border-radius: 7px !important;
+  font-size: 13px !important;
+  outline: none !important;
+  background: transparent !important;
+  font-family: inherit !important;
+  color: var(--text) !important;
+  font-weight: 500 !important;
+}
+
+#builderModal .editable-item input:focus {
+  border-color: var(--primary) !important;
+  background: var(--card) !important;
+  box-shadow: 0 0 0 3px rgba(249,115,22,.08) !important;
+}
+
+#builderModal .editable-item .rm-btn {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 7px !important;
+  border: none !important;
+  background: rgba(239,68,68,.1) !important;
+  color: var(--red) !important;
+  cursor: pointer !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+}
+
+#builderModal .editable-item .rm-btn:hover {
+  background: var(--red) !important;
+  color: #fff !important;
+}
+
+/* ============================================================
+   SUMMARY SECTION
+   ============================================================ */
+#builderModal .summary-section {
+  margin-top: 24px !important;
+  border-radius: 14px !important;
+  padding: 22px !important;
+  background: linear-gradient(135deg, var(--primary-bg), #ffedd5) !important;
+  border: 1px solid var(--primary-light) !important;
+}
+
+body.dark #builderModal .summary-section {
+  background: linear-gradient(135deg, #2a1a0a, #1f1408) !important;
+}
+
+#builderModal .summary-section h3 {
+  font-size: 14.5px !important;
+  font-weight: 800 !important;
+  margin-bottom: 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+#builderModal .summary-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 10px !important;
+  margin-bottom: 16px !important;
+}
+
+#builderModal .summary-item {
+  padding: 12px 14px !important;
+  background: var(--card) !important;
+  border-radius: 10px !important;
+  border: 1px solid var(--border) !important;
+}
+
+#builderModal .summary-item .s-label {
+  font-size: 11px !important;
+  color: var(--text-2) !important;
+  font-weight: 600 !important;
+  margin-bottom: 4px !important;
+}
+
+#builderModal .summary-item .s-val {
+  font-size: 15px !important;
+  font-weight: 800 !important;
+}
+
+#builderModal .grand-total-box {
+  padding: 16px 18px !important;
+  background: var(--card) !important;
+  border-radius: 12px !important;
+  border: 1px solid var(--border) !important;
+}
+
+#builderModal .gt-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 8px 0 !important;
+  font-size: 13px !important;
+  gap: 12px !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+#builderModal .gt-row:last-child {
+  border-bottom: none !important;
+}
+
+#builderModal .gt-row input,
+#builderModal .gt-row select {
+  padding: 6px 12px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--border) !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  outline: none !important;
+  min-width: 130px !important;
+  max-width: 200px !important;
+  text-align: right !important;
+  background: var(--card) !important;
+  color: var(--text) !important;
+}
+
+#builderModal .gt-row select {
+  text-align: left !important;
+  cursor: pointer !important;
+}
+
+/* ============================================================
+   RESPONSIVE — Builder modal
+   ============================================================ */
+@media (max-width: 1200px) {
+  #builderModal .hotel-room-row {
+    grid-template-columns: 42px 1fr 1fr !important;
+  }
+  #builderModal .hotel-room-row .rc:nth-child(n+4) {
+    grid-column: span 1 !important;
+  }
+  #builderModal .hotel-rooms-total {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+@media (max-width: 900px) {
+  #builderModal .grid-2,
+  #builderModal .grid-3,
+  #builderModal .grid-4 {
+    grid-template-columns: 1fr !important;
+  }
+  #builderModal .summary-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  #builderModal .hotel-room-row {
+    grid-template-columns: 42px 1fr 1fr !important;
+  }
+  #builderModal .hotel-room-row .rr-btn {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+  }
+  #builderModal .zy-transport-item {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  #builderModal .zy-remove-btn {
+    grid-column: span 2 !important;
+    width: 100% !important;
+  }
+  #builderModal .hotel-stay-dates {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 768px) {
+  #builderModal .summary-grid {
+    grid-template-columns: 1fr !important;
+  }
+  #builderModal .zy-transport-item {
+    grid-template-columns: 1fr !important;
+  }
+  #builderModal .zy-remove-btn {
+    grid-column: span 1 !important;
+  }
+  #builderModal .hotel-rooms-total {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Keep the room fields in their intended positions after the modal overrides above. */
+@media (max-width: 1200px) {
+  #builderModal .hotel-room-row {
+    grid-template-columns: 42px repeat(6, minmax(0, 1fr)) 34px !important;
+  }
+
+  #builderModal .hotel-room-row > .rn { grid-column: 1 !important; grid-row: 1 / span 2 !important; }
+  #builderModal .hotel-room-row > .rc.room-type { grid-column: 2 !important; grid-row: 1 !important; }
+  #builderModal .hotel-room-row > .rc.room-adults { grid-column: 3 !important; grid-row: 1 !important; }
+  #builderModal .hotel-room-row > .rc.room-nights { grid-column: 4 !important; grid-row: 1 !important; }
+  #builderModal .hotel-room-row > .rc.room-vendor-rate { grid-column: 5 !important; grid-row: 1 !important; }
+  #builderModal .hotel-room-row > .rc.room-sell-rate { grid-column: 6 !important; grid-row: 1 !important; }
+  #builderModal .hotel-room-row > .rc.room-meal-rate { grid-column: 7 !important; grid-row: 1 !important; }
+  #builderModal .hotel-room-row > .rc.room-meal { grid-column: 2 / span 2 !important; grid-row: 2 !important; }
+  #builderModal .hotel-room-row > .rc.room-total { grid-column: 4 / span 4 !important; grid-row: 2 !important; }
+  #builderModal .hotel-room-row > .rr-btn { grid-column: 8 !important; grid-row: 2 !important; width: 34px !important; justify-self: end !important; }
+
+  #builderModal .hotel-rooms-total {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  #builderModal .hotel-room-row {
+    grid-template-columns: 42px repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  #builderModal .hotel-room-row > .rn { grid-column: 1 !important; grid-row: 1 / span 4 !important; }
+  #builderModal .hotel-room-row > .rc.room-type { grid-column: 2 !important; grid-row: 1 !important; }
+  #builderModal .hotel-room-row > .rc.room-adults { grid-column: 3 !important; grid-row: 1 !important; }
+  #builderModal .hotel-room-row > .rc.room-nights { grid-column: 2 !important; grid-row: 2 !important; }
+  #builderModal .hotel-room-row > .rc.room-vendor-rate { grid-column: 3 !important; grid-row: 2 !important; }
+  #builderModal .hotel-room-row > .rc.room-sell-rate { grid-column: 2 !important; grid-row: 3 !important; }
+  #builderModal .hotel-room-row > .rc.room-meal-rate { grid-column: 3 !important; grid-row: 3 !important; }
+  #builderModal .hotel-room-row > .rc.room-meal { grid-column: 2 !important; grid-row: 4 !important; }
+  #builderModal .hotel-room-row > .rc.room-total { grid-column: 2 / span 2 !important; grid-row: 5 !important; }
+  #builderModal .hotel-room-row > .rr-btn { grid-column: 3 !important; grid-row: 6 !important; width: 34px !important; justify-self: end !important; }
+}
+
+@media (max-width: 768px) {
+  #builderModal .hotel-rooms-total {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}

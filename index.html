@@ -1,0 +1,1670 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🕋 Umrah Builder — Dashboard</title>
+
+<!-- FONTS -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- EXTERNAL LIBRARIES -->
+<script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<!-- CSS -->
+<link rel="stylesheet" href="assets/css/main.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/builder.css">
+<link rel="stylesheet" href="assets/css/chatbot.css">
+<link rel="stylesheet" href="assets/css/business.css">
+<link rel="stylesheet" href="assets/css/responsive.css">
+<link rel="stylesheet" href="assets/css/tasks.css">
+<link rel="stylesheet" href="assets/css/builder-fix.css">
+</head>
+<body>
+
+<!-- ⭐ Auth Loading Overlay -->
+<div id="authLoading" style="position: fixed; inset: 0; background: #f5f5f7; z-index: 999999; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; font-family: 'Inter', 'Hind Siliguri', sans-serif;">
+  <div style="width: 44px; height: 44px; border: 3px solid #e8e8ec; border-top-color: #f97316; border-radius: 50%; animation: authSpin 0.7s linear infinite;"></div>
+  <div style="font-size: 13px; color: #52525b; font-weight: 600;">Loading your workspace...</div>
+</div>
+<style>
+  @keyframes authSpin { to { transform: rotate(360deg); } }
+  .app { visibility: hidden !important; }
+  body.auth-ready.app-ready .app { visibility: visible !important; }
+  body:not(.auth-ready) #authLoading { display: flex !important; }
+  body.auth-ready:not(.app-ready) #authLoading { display: flex !important; }
+  body.auth-ready.app-ready #authLoading { display: none !important; }
+</style>
+
+<div class="app">
+
+<!-- ============ SIDEBAR ============ -->
+<aside class="sb">
+  <div class="brand">
+    <div class="blogo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2L3 7v6c0 5 4 8 9 9 5-1 9-4 9-9V7l-9-5z"/>
+      </svg>
+    </div>
+    <div class="btxt">Umrah Builder<span>Premium Suite</span></div>
+  </div>
+
+  <div class="sb-section">Main Menu</div>
+  <a class="ni act" data-page="dashboard" onclick="nav('dashboard', this)">
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
+    <span class="lbl">Dashboard</span>
+  </a>
+  <a class="ni" data-page="analytics" onclick="nav('analytics', this)">
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></span>
+    <span class="lbl">Analytics</span>
+  </a>
+  <a class="ni" data-page="packages" onclick="nav('packages', this)">
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></span>
+    <span class="lbl">Packages</span><span class="badge" id="navPkgCount"></span>
+  </a>
+  <a class="ni" data-page="followups" onclick="nav('followups', this)">
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg></span>
+    <span class="lbl">Follow-ups</span><span class="badge" id="navFollowCount"></span>
+  </a>
+
+  
+  <div class="sb-section">Setup</div>
+  <a class="ni" data-page="makkah" onclick="nav('makkah', this)">
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></span>
+    <span class="lbl">Makkah Hotels</span><span class="badge" id="navMakkahCount"></span>
+  </a>
+  <a class="ni" data-page="madinah" onclick="nav('madinah', this)">
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></span>
+    <span class="lbl">Madinah Hotels</span><span class="badge" id="navMadinahCount"></span>
+  </a>
+
+  <div class="sb-section">Transport</div>
+  <a class="ni" data-page="flights" onclick="nav('flights', this)">
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span>
+    <span class="lbl">Flights</span><span class="badge" id="navFlightCount"></span>
+  </a>
+  <a class="ni" data-page="transports" onclick="nav('transports', this)">
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span>
+    <span class="lbl">Transports</span><span class="badge" id="navTransportCount"></span>
+  </a>
+
+  <div class="sb-section">Services</div>
+  <a class="ni" data-page="visas" onclick="nav('visas', this)">
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+    <span class="lbl">Visa</span><span class="badge" id="navVisaCount"></span>
+  </a>
+  <a class="ni" data-page="ziyarah" onclick="nav('ziyarah', this)">
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+    <span class="lbl">Ziyarah</span><span class="badge" id="navZiyarahCount"></span>
+  </a>
+  <a class="ni" data-page="services" onclick="nav('services', this)">
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/></svg></span>
+    <span class="lbl">Services</span>
+  </a>
+
+  <div class="sb-section">System</div>
+  <a class="ni" data-page="customers" onclick="nav('customers', this)">
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span>
+    <span class="lbl">Customers</span>
+  </a>
+  <a class="ni" data-page="vendors" onclick="nav('vendors', this)">
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></span>
+    <span class="lbl">Vendors</span>
+  </a>
+
+  <div class="sb-section">Business</div>
+  <a class="ni" data-page="reports" onclick="nav('reports', this)">
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></span>
+    <span class="lbl">Reports</span>
+  </a>
+  <a class="ni" data-page="accounts" onclick="nav('accounts', this)">
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
+    <span class="lbl">Accounts</span>
+  </a>
+  <a class="ni" data-page="performance" onclick="nav('performance', this)">
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>
+    <span class="lbl">Performance</span>
+  </a>
+  <a class="ni" data-page="tasks" onclick="nav('tasks', this)">
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+    <span class="lbl">Tasks</span><span class="badge" id="navTaskCount"></span>
+  </a>
+  <a class="ni" data-page="documents" onclick="nav('documents', this)">
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span>
+    <span class="lbl">Documents</span>
+  </a>
+  <a class="ni" data-page="settings" onclick="nav('settings', this)">
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+    <span class="lbl">Settings</span>
+  </a>
+  <a class="ni" onclick="toggleTheme()" style="cursor:pointer">
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+    <span class="lbl" id="themeLabel">Night Mode</span>
+  </a>
+
+  <div class="profile-box">
+    <img class="profile-avatar" id="sideAvatar" src="" alt="" style="object-fit:cover;display:none">
+    <div class="profile-avatar" id="sideAvatarFallback">A</div>
+    <div class="profile-info">
+      <div class="name" id="sideName">Admin</div>
+      <div class="email" id="sideEmail">admin@umrah.com</div>
+    </div>
+    <button class="logout-btn" onclick="logout()" aria-label="Logout" title="Logout">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    </button>
+  </div>
+</aside>
+  <!-- ============ MAIN ============ -->
+  <main class="mn">
+    <div class="topbar">
+      <div class="page-title-wrap">
+        <h1 class="page-greeting" id="pageTitle">Welcome back, <span>Admin!</span></h1>
+        <div class="page-subtitle" id="pageSubtitle">Overview of your Umrah business</div>
+      </div>
+      <div class="topbar-right">
+        <div class="search-global">
+          <input type="text" placeholder="Search packages, hotels..." id="globalSearch" oninput="globalSearchHandler(this.value)">
+        </div>
+        <div class="notification-wrapper">
+          <button class="icon-btn notification-btn" id="notificationBtn" onclick="toggleNotifications(event)" title="Notifications">🔔<span class="notification-badge" id="notifBadge" style="display:none">0</span></button>
+          <div class="notification-panel" id="notificationPanel">
+            <div class="notification-header">
+              <div class="notif-title"><h3>🔔 Notifications</h3><span class="notif-count-badge" id="notifPanelCount">0</span></div>
+              <button class="notif-mark-all" onclick="markAllNotificationsRead()">✓ Mark all read</button>
+            </div>
+            <div class="notification-tabs">
+              <button class="notif-tab act" onclick="switchNotifTab('all', this)">All <span class="notif-tab-count" id="notifAllCount">0</span></button>
+              <button class="notif-tab" onclick="switchNotifTab('unread', this)">Unread <span class="notif-tab-count" id="notifUnreadCount">0</span></button>
+              <button class="notif-tab" onclick="switchNotifTab('read', this)">Read <span class="notif-tab-count" id="notifReadCount">0</span></button>
+            </div>
+            <div class="notification-list" id="notificationList">
+              <div class="notification-empty"><div style="font-size:40px;opacity:.3;margin-bottom:12px">🔔</div><div style="font-size:13px;font-weight:600">No notifications yet</div></div>
+            </div>
+            <div class="notification-footer"><button onclick="clearAllNotifications()">🗑️ Clear all</button></div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openBuilder()">✨ New Package</button>
+      </div>
+    </div>
+    <!-- ============ DASHBOARD ============ -->
+    <div class="page act" id="page-dashboard">
+      <div class="section-head">
+        <h2>Highlights</h2>
+        <button class="btn btn-secondary btn-sm" onclick="renderDashboard()">↻ Refresh</button>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card" onclick="nav('packages', document.querySelector('[data-page=packages]'))">
+          <div class="stat-head"><div class="stat-icon">📦</div><div class="stat-label">Packages</div></div>
+          <div class="stat-value" id="statPackages">0</div><div class="stat-foot">Total packages</div>
+        </div>
+        <div class="stat-card" onclick="nav('customers', document.querySelector('[data-page=customers]'))">
+          <div class="stat-head"><div class="stat-icon" style="background: var(--green-bg);">👥</div><div class="stat-label">Customers</div></div>
+          <div class="stat-value" id="statCustomers">0</div><div class="stat-foot">Total customers</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-head"><div class="stat-icon" style="background: var(--amber-bg);">⏳</div><div class="stat-label">Total Due</div></div>
+          <div class="stat-value" id="statDue" style="font-size:22px;">৳0</div><div class="stat-foot">Customer due</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-head"><div class="stat-icon" style="background: var(--blue-bg);">💰</div><div class="stat-label">Received</div></div>
+          <div class="stat-value" id="statRevenue" style="font-size:22px;">৳0</div><div class="stat-foot">Total received</div>
+        </div>
+      </div>
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-head"><div class="chart-title"><h3>Account Growth</h3><p>Package creation over months</p></div></div>
+          <div class="chart-canvas-wrap"><canvas id="progressChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-head"><div class="chart-title"><h3>Package Type Split</h3></div></div>
+          <div class="donut-wrap"><canvas id="typeChart"></canvas></div>
+          <div class="donut-legend">
+            <div class="legend-item"><span class="legend-dot" style="background:#f97316;"></span>Standard <span class="legend-value" id="legendStandard">0</span></div>
+            <div class="legend-item"><span class="legend-dot" style="background:#3b82f6;"></span>Economy <span class="legend-value" id="legendEconomy">0</span></div>
+            <div class="legend-item"><span class="legend-dot" style="background:#a855f7;"></span>Premium <span class="legend-value" id="legendPremium">0</span></div>
+            <div class="legend-item"><span class="legend-dot" style="background:#22c55e;"></span>Ramadan <span class="legend-value" id="legendRamadan">0</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="content-row">
+        <!-- ⭐ Left Column: Recent Packages + Recent Tasks -->
+        <div style="display:flex; flex-direction:column; gap:16px">
+          
+          <!-- Recent Packages -->
+          <div class="content-card">
+            <div class="content-head">
+              <h3>📌 Recent Packages</h3>
+              <button class="btn btn-ghost btn-sm" onclick="nav('packages', document.querySelector('[data-page=packages]'))">View All →</button>
+            </div>
+            <div id="recentPackagesList"></div>
+          </div>
+
+          <!-- Recent Tasks (⭐ এখন সঠিক জায়গায়) -->
+          <div class="content-card">
+            <div class="content-head">
+              <h3>📋 Recent Tasks</h3>
+              <button class="btn btn-ghost btn-sm" onclick="nav('tasks', document.querySelector('[data-page=tasks]'))">View All →</button>
+            </div>
+            <div id="dashboardTasksList"></div>
+          </div>
+
+        </div>
+
+        <!-- ⭐ Right Column: Quick Start + Templates -->
+        <div>
+          <div class="quick-card">
+            <h4>⚡ Quick Start</h4><p>Start with a pre-built template to save time.</p>
+            <button class="btn btn-primary btn-sm" onclick="openBuilder()">✨ Create New Package</button>
+          </div>
+          <div class="content-card">
+            <div class="content-head"><h3>🎯 Templates</h3></div>
+            <div class="template-grid">
+              <div class="template-card" onclick="applyTemplate('economy')"><div class="t-icon">💰</div><div class="t-name">Economy</div><div class="t-price">৳95K</div></div>
+              <div class="template-card" onclick="applyTemplate('standard')"><div class="t-icon">⭐</div><div class="t-name">Standard</div><div class="t-price">৳1.45L</div></div>
+              <div class="template-card" onclick="applyTemplate('premium')"><div class="t-icon">👑</div><div class="t-name">Premium</div><div class="t-price">৳2.25L</div></div>
+              <div class="template-card" onclick="applyTemplate('ramadan')"><div class="t-icon">🌙</div><div class="t-name">Ramadan</div><div class="t-price">৳3.5L</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ ANALYTICS ============ -->
+    <div class="page" id="page-analytics">
+      <div class="analytics-wrapper">
+        <div class="an-profile-header">
+          <div class="an-profile-left">
+            <div class="an-avatar-wrap">
+              <img id="anAvatarImg" src="" alt="" style="display:none">
+              <div id="anAvatarFallback" class="an-avatar-fallback">A</div>
+            </div>
+            <div><div class="an-profile-name" id="anProfileName">Admin</div><div class="an-profile-role" id="anProfileRole">Travel Agent</div></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-secondary btn-sm" onclick="exportAnalyticsExcel()">📥 Export Excel</button>
+            <input type="file" id="analyticsImportFile" accept=".csv,.xlsx,.xls,.json" style="display:none" onchange="importAnalyticsData(event)">
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('analyticsImportFile').click()">📤 Import Data</button>
+            
+            <button class="an-refresh-btn" onclick="renderAnalytics()">↻ Refresh</button>
+          </div>
+        </div>
+        <div class="an-kpi-grid">
+          <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#eff6ff;color:#3b82f6">💰</span><span class="an-kpi-label">Gross Revenue</span></div><div class="an-kpi-value" id="kpiGross">৳0</div><div class="an-kpi-foot">Total customer sell</div></div>
+          <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#f0fdf4;color:#22c55e">📈</span><span class="an-kpi-label">Net Profit</span></div><div class="an-kpi-value" id="kpiNet">৳0</div><div class="an-kpi-foot">Sell − Vendor Cost − Visa</div></div>
+          <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#fff7ed;color:#f97316">🏢</span><span class="an-kpi-label">Vendor Cost</span></div><div class="an-kpi-value" id="kpiVendor">৳0</div><div class="an-kpi-foot">Hotel + Flight + Transport + Service</div></div>
+          <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#fef2f2;color:#ef4444">⏳</span><span class="an-kpi-label">Pending</span></div><div class="an-kpi-value" id="kpiPending">৳0</div><div class="an-kpi-foot">Not yet paid/completed</div></div>
+        </div>
+        <div class="an-kpi-grid" style="grid-template-columns: repeat(4, 1fr);">
+          <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#f0fdf4;color:#16a34a">💵</span><span class="an-kpi-label">Customer Paid</span></div><div class="an-kpi-value" id="kpiCustomerPaid" style="color:var(--green)">৳0</div><div class="an-kpi-foot">Customer থেকে পেয়েছি</div></div>
+          <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#fef2f2;color:#dc2626">📉</span><span class="an-kpi-label">Customer Due</span></div><div class="an-kpi-value" id="kpiCustomerDue" style="color:var(--red)">৳0</div><div class="an-kpi-foot">Customer কাছে পাব</div></div>
+          <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#fef2f2;color:#dc2626">💸</span><span class="an-kpi-label">Vendor Paid</span></div><div class="an-kpi-value" id="kpiVendorPaid" style="color:var(--red)">৳0</div><div class="an-kpi-foot">Vendor-কে দিয়েছি</div></div>
+          <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#fff7ed;color:#f59e0b">⏳</span><span class="an-kpi-label">Vendor Due</span></div><div class="an-kpi-value" id="kpiVendorDue" style="color:var(--amber)">৳0</div><div class="an-kpi-foot">Vendor-কে দিতে হবে</div></div>
+        </div>
+        <div class="an-kpi-grid" style="grid-template-columns: repeat(3, 1fr);">
+          <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#faf5ff;color:#a855f7">▤</span><span class="an-kpi-label">Visa Cost</span></div><div class="an-kpi-value" id="kpiVisaCost" style="color:var(--purple)">৳0</div><div class="an-kpi-foot">আলাদা line item</div></div>
+          <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#eff6ff;color:#3b82f6">💵</span><span class="an-kpi-label">Cash in Hand</span></div><div class="an-kpi-value" id="kpiCash" style="color:var(--blue)">৳0</div><div class="an-kpi-foot">Customer Paid − Vendor Paid</div></div>
+          <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#f0fdf4;color:#22c55e">📊</span><span class="an-kpi-label">Profit Margin</span></div><div class="an-kpi-value" id="kpiMargin" style="color:var(--green)">0%</div><div class="an-kpi-foot">Net Profit / Gross Revenue</div></div>
+        </div>
+        <div class="an-charts-row">
+          <div class="an-card"><div class="an-card-head"><h3>Revenue Overview</h3><span class="an-badge">Monthly</span></div><div class="an-chart-wrap"><canvas id="analyticsRevenueChart"></canvas></div></div>
+          <div class="an-card"><div class="an-card-head"><h3>Payment Status</h3><span class="an-badge">Live</span></div><div class="an-donut-wrap"><canvas id="analyticsStatusChart"></canvas></div><div class="an-donut-legend" id="analyticsStatusLegend"></div></div>
+        </div>
+        <div class="an-breakdown-row">
+          <div class="an-card"><div class="an-card-head"><h3>📊 Status Breakdown</h3></div><div class="an-list" id="analyticsStatusList"></div></div>
+          <div class="an-card"><div class="an-card-head"><h3>🎯 Revenue by Package Type</h3></div><div class="an-list" id="analyticsTypeList"></div></div>
+        </div>
+        <div class="an-card an-table-card">
+          <div class="an-card-head" style="flex-wrap:wrap;gap:10px">
+            <h3>📋 All Packages Financial Summary</h3>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <input type="date" id="finSummaryDateFrom" class="filter-select" style="font-size:12px;min-width:130px">
+              <span style="font-size:12px;color:var(--text-3)">→</span>
+              <input type="date" id="finSummaryDateTo" class="filter-select" style="font-size:12px;min-width:130px">
+              <button class="btn btn-primary btn-sm" onclick="filterFinancialSummary()">🔍 Filter</button>
+              <button class="btn btn-ghost btn-sm" onclick="clearFinancialFilter()">↻ Clear</button>
+              <span class="an-badge" id="anPkgCountBadge">0 packages</span>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Ref</th><th>Date</th><th>Package</th><th>Customer</th><th>Status</th><th>Vendor Cost</th><th>Selling</th><th>Received</th><th>Vendor Paid</th><th>Due</th><th>Profit</th><th>Margin</th><th>Action</th></tr></thead>
+              <tbody id="analyticsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ============ PACKAGES ============ -->
+    <div class="page" id="page-packages">
+      <div class="table-card">
+        <div class="table-head">
+          <h3>All Umrah Packages</h3>
+          <div class="table-head-actions">
+            <div class="search-global" style="width:220px"><input type="text" placeholder="Search..." oninput="searchPackages(this.value)"></div>
+            <button class="btn btn-primary btn-sm" onclick="openBuilder()">✨ Create Package</button>
+          </div>
+        </div>
+        <div style="padding: 20px;" id="packagesList"></div>
+      </div>
+    </div>
+
+    <!-- ============ FOLLOW-UPS ============ -->
+    <div class="page" id="page-followups">
+      <div class="fk-wrapper">
+        <div class="fk-header">
+          <div class="fk-header-left">
+            <div class="fk-header-icon">🎯</div>
+            <div><div class="fk-header-title">Lead Pipeline</div><div class="fk-header-sub" id="fkHeaderSub">Loading...</div></div>
+          </div>
+          <div class="fk-header-right">
+            <button class="btn btn-ghost btn-sm" onclick="switchFollowTab('package')" id="followTabPackage">📦 Packages</button>
+            <button class="btn btn-secondary btn-sm" onclick="switchFollowTab('lead')" id="followTabLead">👤 Leads</button>
+            <button class="btn btn-primary btn-sm" onclick="openFollowSetup()">➕ Add Lead</button>
+          </div>
+        </div>
+        <div class="fk-filters" id="fkFilters">
+          <div class="fk-search"><span>🔍</span><input type="text" id="followSearchInput" placeholder="Search name, phone, email, tag..." oninput="followSearchChange(this.value)"></div>
+          <select id="followFilterAssigned" class="fk-filter-select" onchange="followFilterAssignedChange(this.value)"><option value="all">👥 All Team</option></select>
+          <select id="followFilterPriority" class="fk-filter-select" onchange="followFilterPriorityChange(this.value)"><option value="all">⚡ All Priority</option><option value="high">🔴 High</option><option value="medium">🟡 Medium</option><option value="low">🟢 Low</option></select>
+          <select id="followFilterDate" class="fk-filter-select" onchange="followFilterDateChange(this.value)"><option value="all">📅 All Time</option><option value="today">🔥 Today</option><option value="week">🗓️ This Week</option><option value="overdue">⚠️ Overdue</option></select>
+          <button class="btn btn-ghost btn-sm" onclick="clearFollowFilters()" title="Clear filters">↻ Reset</button>
+          <div style="flex:1"></div>
+          <div class="fk-view-toggle"><button class="fk-view-btn act" id="fkViewKanban" onclick="switchFollowView('kanban')" title="Kanban">▦</button><button class="fk-view-btn" id="fkViewList" onclick="switchFollowView('list')" title="List">☰</button></div>
+        </div>
+        <div class="fk-kanban" id="fkKanban"></div>
+        <div class="fk-list" id="fkList" style="display:none"></div>
+      </div>
+    </div>
+    <!-- ============ MAKKAH ============ -->
+    <div class="page" id="page-makkah">
+      <div class="table-card">
+        <div class="table-head">
+          <h3>🕌 Makkah Hotels</h3>
+          <div class="table-head-actions">
+            <select id="makkahStarFilter" class="filter-select" onchange="renderHotelsTable('makkah')"><option value="all">⭐ All Stars</option><option value="3">⭐⭐⭐ 3 Star</option><option value="4">⭐⭐⭐⭐ 4 Star</option><option value="5">⭐⭐⭐⭐⭐ 5 Star</option></select>
+            <select id="makkahStatusFilter" class="filter-select" onchange="renderHotelsTable('makkah')"><option value="all">📋 All Status</option><option value="active">✅ Active</option><option value="expired">⚠️ Expired</option></select>
+            <button class="btn btn-secondary btn-sm" onclick="openHotelSetupFromVendor('makkah')">🏢 From Vendor</button>
+            <button class="btn btn-primary btn-sm" onclick="openHotelSetup('makkah')">➕ Add Hotel</button>
+          </div>
+        </div>
+        <div id="makkahTable"></div>
+      </div>
+    </div>
+    <!-- ============ MADINAH ============ -->
+    <div class="page" id="page-madinah">
+      <div class="table-card">
+        <div class="table-head">
+          <h3>🕌 Madinah Hotels</h3>
+          <div class="table-head-actions">
+            <select id="madinahStarFilter" class="filter-select" onchange="renderHotelsTable('madinah')"><option value="all">⭐ All Stars</option><option value="3">⭐⭐⭐ 3 Star</option><option value="4">⭐⭐⭐⭐ 4 Star</option><option value="5">⭐⭐⭐⭐⭐ 5 Star</option></select>
+            <select id="madinahStatusFilter" class="filter-select" onchange="renderHotelsTable('madinah')"><option value="all">📋 All Status</option><option value="active">✅ Active</option><option value="expired">⚠️ Expired</option></select>
+            <button class="btn btn-secondary btn-sm" onclick="openHotelSetupFromVendor('madinah')">🏢 From Vendor</button>
+            <button class="btn btn-primary btn-sm" onclick="openHotelSetup('madinah')">➕ Add Hotel</button>
+          </div>
+        </div>
+        <div id="madinahTable"></div>
+      </div>
+    </div>
+    <!-- ============ FLIGHTS ============ -->
+    <div class="page" id="page-flights">
+      <div class="table-card">
+        <div class="table-head"><h3>✈ Flights</h3><button class="btn btn-primary btn-sm" onclick="openFlightSetup()">➕ Add Flight</button></div>
+        <div id="flightsTable"></div>
+      </div>
+    </div>
+    <!-- ============ TRANSPORTS ============ -->
+    <div class="page" id="page-transports">
+      <div class="table-card">
+        <div class="table-head">
+          <h3>▣ Transport Routes</h3>
+          <div class="table-head-actions">
+            <input type="text" id="trSearchInput" class="search-box" placeholder="Search route..." oninput="renderTransportsTable()" style="width: 150px;">
+            <select id="trTypeFilter" class="filter-select" onchange="renderTransportsTable()">
+              <option value="all">🚗 All Vehicles</option>
+              <option value="Sedan">🚗 Sedan (4)</option>
+              <option value="7-Seater">🚐 7-Seater (7)</option>
+              <option value="Hiace">🚐 Hiace (12)</option>
+              <option value="GMC">🚐 GMC (7)</option>
+              <option value="Coaster">🚌 Coaster (22)</option>
+              <option value="Bullet Train">🚄 Bullet Train (Per Person)</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="openTransportSetup()">➕ Add Route</button>
+          </div>
+        </div>
+        <div style="padding: 12px 20px 0;"><span id="trResultsCount" style="font-size: 12px; font-weight: 700; color: var(--text-3);">0 Vehicles Found</span></div>
+        <div id="transportsTable"></div>
+      </div>
+    </div>
+
+    <!-- ============ VISAS ============ -->
+    <div class="page" id="page-visas">
+      <div class="table-card">
+        <div class="table-head"><h3>▤ Visa Types</h3><button class="btn btn-primary btn-sm" onclick="openVisaSetup()">➕ Add Visa</button></div>
+        <div id="visasTable"></div>
+      </div>
+    </div>
+
+    <!-- ============ ZIYARAH ============ -->
+    <div class="page" id="page-ziyarah">
+      <div class="table-card">
+        <div class="table-head">
+          <h3>★ Ziyarah Tours (Master Data)</h3>
+          <div class="table-head-actions">
+            <button class="btn btn-secondary btn-sm" onclick="renderZiyarahMasterPage()">↻ Refresh</button>
+            <button class="btn btn-primary btn-sm" onclick="openZiyarahSetup()">➕ Add Ziyarah</button>
+          </div>
+        </div>
+        <div style="padding:20px" id="ziyarahMasterList"></div>
+      </div>
+    </div>
+
+    <!-- ============ SERVICES ============ -->
+    <div class="page" id="page-services">
+      <div class="table-card">
+        <div class="table-head"><h3>▦ Other Services</h3><button class="btn btn-primary btn-sm" onclick="openServiceSetup()">➕ Add Service</button></div>
+        <div id="servicesTable"></div>
+      </div>
+    </div>
+
+    <!-- ============ CUSTOMERS ============ -->
+    <div class="page" id="page-customers">
+      <div class="table-card">
+        <div class="table-head">
+          <h3>👥 Customers</h3>
+          <div class="table-head-actions">
+            <div class="search-wrap"><input type="text" class="search-box" placeholder="Search customers..." oninput="searchCustomers(this.value)"></div>
+            <button class="btn btn-primary btn-sm" onclick="openCustomerSetup()">➕ Add Customer</button>
+          </div>
+        </div>
+        <div style="padding:20px" id="customersTable"></div>
+      </div>
+    </div>
+
+    <!-- ============ VENDORS ============ -->
+    <div class="page" id="page-vendors">
+      <div class="table-card">
+        <div class="table-head">
+          <h3>🏢 Vendors</h3>
+          <div class="table-head-actions">
+            <div class="search-wrap"><input type="text" class="search-box" placeholder="Search vendors..." oninput="searchVendors(this.value)"></div>
+            <button class="btn btn-primary btn-sm" onclick="openVendorSetup()">➕ Add Vendor</button>
+          </div>
+        </div>
+        <div style="padding:20px" id="vendorsTable"></div>
+      </div>
+    </div>
+    <!-- ============ SETTINGS ============ -->
+    <div class="page" id="page-settings">
+      <div class="content-card" style="max-width: 900px;">
+        <div class="content-head"><h3>⚙ Settings</h3></div>
+        <div class="section"><div class="section-header"><div class="left"><div class="num">1</div><h3>👤 User Profile</h3></div></div>
+          <div class="section-body">
+            <div class="profile-upload-wrap">
+              <div class="profile-pic-preview" id="profilePicPreview"><span id="profilePicFallback">A</span></div>
+              <div>
+                <input type="file" id="userPicInput" accept="image/*" style="display:none" onchange="uploadUserPic(event)">
+                <button class="btn btn-primary btn-sm" onclick="document.getElementById('userPicInput').click()">📷 Upload Photo</button>
+                <button class="btn btn-secondary btn-sm" onclick="removeUserPic()" style="margin-left:8px">🗑️ Remove</button>
+                <div class="hint" style="margin-top:8px;font-size:11px;color:var(--text-3)">Square image, max 2MB</div>
+              </div>
+            </div>
+            <div class="grid-2" style="margin-top:16px">
+              <div class="field"><label>Your Name</label><input type="text" id="setUserName" value="Admin" oninput="updateDashboardName()"></div>
+              <div class="field"><label>Your Email</label><input type="email" id="setUserEmail" value="admin@umrah.com"></div>
+              <div class="field"><label>Your Phone</label><input type="text" id="setUserPhone" placeholder="01XXXXXXXXX"></div>
+              <div class="field"><label>Your Role</label><input type="text" id="setUserRole" value="Travel Agent"></div>
+            </div>
+          </div>
+        </div>
+        <div class="section"><div class="section-header"><div class="left"><div class="num">2</div><h3>🏢 Company Info</h3></div></div>
+          <div class="section-body">
+            <div class="grid-2">
+              <div class="field"><label>Company Name</label><input type="text" id="setCompany" value="Al-Haram Travels"></div>
+              <div class="field"><label>Phone</label><input type="text" id="setPhone" placeholder="01XXXXXXXXX"></div>
+              <div class="field" style="grid-column:1/-1"><label>Address</label><input type="text" id="setAddress" placeholder="Dhaka"></div>
+              <div class="field"><label>Email</label><input type="text" id="setEmail" placeholder="info@travels.com"></div>
+              <div class="field"><label>License No</label><input type="text" id="setLicense" placeholder="Hajj License"></div>
+            </div>
+          </div>
+        </div>
+        <div class="section"><div class="section-header"><div class="left"><div class="num">3</div><h3>📄 Quotation Header & Footer</h3></div></div>
+          <div class="section-body">
+            <div class="grid-2">
+              <div>
+                <label style="display:block;font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:6px">Header Image</label>
+                <input type="file" id="headerImgInput" accept="image/*" style="display:none" onchange="uploadHeaderImg(event)">
+                <div class="image-preview-box" id="headerImgPreview"><span>No header image</span></div>
+                <div style="margin-top:8px;display:flex;gap:8px"><button class="btn btn-primary btn-sm" onclick="document.getElementById('headerImgInput').click()">📷 Upload</button><button class="btn btn-secondary btn-sm" onclick="removeHeaderImg()">🗑️ Remove</button></div>
+              </div>
+              <div>
+                <label style="display:block;font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:6px">Footer Image</label>
+                <input type="file" id="footerImgInput" accept="image/*" style="display:none" onchange="uploadFooterImg(event)">
+                <div class="image-preview-box" id="footerImgPreview"><span>No footer image</span></div>
+                <div style="margin-top:8px;display:flex;gap:8px"><button class="btn btn-primary btn-sm" onclick="document.getElementById('footerImgInput').click()">📷 Upload</button><button class="btn btn-secondary btn-sm" onclick="removeFooterImg()">🗑️ Remove</button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="section"><div class="section-header"><div class="left"><div class="num">4</div><h3>🔢 Quotation Reference Format</h3></div></div>
+          <div class="section-body">
+            <div class="grid-3">
+              <div class="field"><label>Company Prefix</label><input type="text" id="setRefCompanyPrefix" placeholder="ALH"></div>
+              <div class="field"><label>Type Prefix</label><input type="text" id="setRefTypePrefix" placeholder="UMR"></div>
+              <div class="field"><label>Serial Padding</label><input type="number" id="setRefSerialPad" value="4" min="1" max="8"></div>
+            </div>
+            <div class="field" style="margin-top:14px"><label>Format Pattern</label><input type="text" id="setRefFormat" value="{COMPANY}-{TYPE}-{YEAR}-{SERIAL}"></div>
+            <div style="margin-top:12px;padding:10px 12px;background:var(--bg-2);border-radius:8px;font-size:11.5px;color:var(--text-2);line-height:1.7"><b>Available:</b> {COMPANY}, {TYPE}, {YEAR}, {YEAR2}, {MONTH}, {DAY}, {SERIAL}<br><b>Preview:</b> <span id="refPreview" style="color:var(--primary);font-weight:800">ALH-UMR-2025-0001</span></div>
+          </div>
+        </div>
+        <div class="section"><div class="section-header"><div class="left"><div class="num">5</div><h3>💱 Currency Rates</h3></div></div>
+          <div class="section-body"><div class="grid-3"><div class="field"><label>1 SAR = ৳</label><input type="number" id="setSarRate" value="32.80" step="0.01"></div><div class="field"><label>1 USD = ৳</label><input type="number" id="setUsdRate" value="120" step="0.01"></div><div class="field"><label>Exchange Buffer %</label><input type="number" id="setExBuffer" value="2" step="0.1"></div></div></div>
+        </div>
+        <div class="section"><div class="section-header"><div class="left"><div class="num">6</div><h3>💵 Tax & Fees</h3></div></div>
+          <div class="section-body"><div class="grid-2"><div class="field"><label>VAT % (Saudi)</label><input type="number" id="setVatPercent" value="15" min="0" max="100" step="0.01"></div><div class="field"><label>Service Fee (৳)</label><input type="number" id="setServiceFee" value="0" min="0"></div></div></div>
+        </div>
+        <div class="section"><div class="section-header"><div class="left"><div class="num">7</div><h3>📜 Default Policy & Notes</h3></div></div>
+          <div class="section-body">
+            <div class="field"><label>Default Cancellation Policy</label><textarea id="setDefaultPolicy" style="min-height:100px;resize:vertical">Cancellation before 48 hours: Full refund
+Cancellation before 24 hours: 50% refund
+Cancellation within 24 hours: No refund</textarea></div>
+            <div class="field" style="margin-top:14px"><label>Default Notes/Instructions</label><textarea id="setDefaultNotes" style="min-height:80px;resize:vertical">• Passport must be valid for 6+ months
+• Check-in time: 2:00 PM onwards
+• Hotel policies apply for early check-out</textarea></div>
+          </div>
+        </div>
+        <div class="section"><div class="section-header"><div class="left"><div class="num">8</div><h3>🎨 Appearance</h3></div></div>
+          <div class="section-body">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+              <div><div style="font-size:13.5px;font-weight:700;margin-bottom:4px">🌙 Night Mode</div><div style="font-size:12px;color:var(--text-3)">Dark theme চালু/বন্ধ করুন</div></div>
+              <button class="btn btn-primary" onclick="toggleTheme()" id="settingsThemeBtn"><span id="settingsThemeIcon">🌙</span> <span id="settingsThemeLabel">Enable Night Mode</span></button>
+            </div>
+          </div>
+        </div>
+        <div class="section"><div class="section-header"><div class="left"><div class="num">9</div><h3>🔐 Account Security</h3></div></div>
+          <div class="section-body">
+            <div style="padding:16px;background:linear-gradient(135deg,var(--blue-bg),var(--card));border-radius:12px;border-left:3px solid var(--blue);margin-bottom:16px"><div style="font-size:12px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">🔗 Linked Sign-in Methods</div><div id="accountProviders"></div></div>
+            <button class="btn btn-primary" onclick="linkGoogleAccount()" style="width:100%;justify-content:center"><span>🔵</span><span>Link Google Account</span></button>
+            <div style="margin-top:12px;padding:10px 14px;background:var(--bg-2);border-radius:10px;font-size:11.5px;color:var(--text-2);line-height:1.7"><b>💡 একবার Google link করলে:</b><br>• Email + Password দিয়ে login করতে পারবেন<br>• Google button দিয়েও login করতে পারবেন<br>• দুটোই একই account, একই data</div>
+          </div>
+        </div>
+        <div class="section"><div class="section-header"><div class="left"><div class="num">10</div><h3>👥 Staff Management (Admin Only)</h3></div><button class="btn btn-primary btn-sm" onclick="openAddStaffModal()">➕ Add Staff</button></div>
+          <div class="section-body">
+            <div style="padding:14px;background:linear-gradient(135deg,var(--primary-bg),var(--card));border-radius:10px;border-left:3px solid var(--primary);margin-bottom:16px;font-size:12.5px;line-height:1.7"><b>💡 Staff Account:</b><br>• Staff শুধু <b>Accounts, Documents, Reports</b> দেখতে পারবে<br>• Staff Create/Delete শুধু আপনি (Admin) করতে পারবেন<br>• Staff Email + Password দিয়ে Login করবে</div>
+            <div id="staffList" style="display:flex;flex-direction:column;gap:8px"><div style="text-align:center;padding:30px;color:var(--text-3);font-size:12px">Loading staff...</div></div>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="saveSettings()">💾 Save All Settings</button>
+      </div>
+    </div>
+
+    <!-- ============ REPORTS ============ -->
+    <div class="page" id="page-reports">
+      <div class="analytics-wrapper">
+        <div class="an-profile-header">
+          <div class="an-profile-left">
+            <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#6366f1,#818cf8);display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;flex-shrink:0">📊</div>
+            <div><div class="an-profile-name">Reports & Analytics</div><div class="an-profile-role">Business overview & trends</div></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <input type="date" id="repDateFrom" class="filter-select" style="font-size:12px">
+            <span style="font-size:12px;color:var(--text-3)">→</span>
+            <input type="date" id="repDateTo" class="filter-select" style="font-size:12px">
+            <button class="btn btn-primary btn-sm" onclick="renderReports()">🔍 Filter</button>
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('repDateFrom').value='';document.getElementById('repDateTo').value='';renderReports()">↻ Reset</button>
+          </div>
+        </div>
+        <div class="an-kpi-grid">
+          <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#eff6ff;color:#3b82f6">📦</span><span class="an-kpi-label">Total Packages</span></div><div class="an-kpi-value" id="repTotalPkg">0</div><div class="an-kpi-foot">This period</div></div>
+          <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#f0fdf4;color:#22c55e">💰</span><span class="an-kpi-label">Revenue</span></div><div class="an-kpi-value" id="repRevenue" style="color:var(--green)">৳0</div><div class="an-kpi-foot">Customer sell</div></div>
+          <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#fff7ed;color:#f97316">🏢</span><span class="an-kpi-label">Vendor Cost</span></div><div class="an-kpi-value" id="repVendorCost" style="color:var(--primary)">৳0</div><div class="an-kpi-foot">Total paid</div></div>
+          <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#f0fdf4;color:#16a34a">📈</span><span class="an-kpi-label">Net Profit</span></div><div class="an-kpi-value" id="repProfit" style="color:var(--green)">৳0</div><div class="an-kpi-foot" id="repMargin">Margin: 0%</div></div>
+        </div>
+        <div class="an-charts-row">
+          <div class="an-card"><div class="an-card-head"><h3>📈 Monthly Revenue Trend</h3><span class="an-badge">12 Months</span></div><div class="an-chart-wrap"><canvas id="reportRevChart"></canvas></div></div>
+          <div class="an-card"><div class="an-card-head"><h3>🎯 Package Type Split</h3></div><div class="an-donut-wrap"><canvas id="reportTypeChart"></canvas></div><div class="an-donut-legend" id="reportTypeLegend"></div></div>
+        </div>
+        <div class="an-breakdown-row">
+          <div class="an-card"><div class="an-card-head"><h3>📊 Status Breakdown</h3></div><div class="an-list" id="reportStatusList"></div></div>
+          <div class="an-card"><div class="an-card-head"><h3>👥 Top 5 Customers</h3></div><div class="an-list" id="reportTopCustomers"></div></div>
+        </div>
+        <div class="an-card">
+          <div class="an-card-head"><h3>💸 Vendor Payment Summary</h3><span class="an-badge">Live</span></div>
+          <div class="table-wrap"><table><thead><tr><th>Vendor</th><th>Type</th><th>Total Cost</th><th>Paid</th><th>Due</th><th>Status</th></tr></thead><tbody id="reportVendorTable"></tbody></table></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ ACCOUNTS ============ -->
+    <div class="page" id="page-accounts">
+      <div class="analytics-wrapper">
+        <div class="an-profile-header">
+          <div class="an-profile-left">
+            <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;flex-shrink:0">💼</div>
+            <div><div class="an-profile-name">Accounts & Ledger</div><div class="an-profile-role">Real-time financial summary</div></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-danger btn-sm" onclick="openRefundModal()">♻️ Add Refund</button><button class="btn btn-primary btn-sm" onclick="openCreateInvoiceModal()">🧾 Create Invoice</button><button class="btn btn-primary btn-sm" onclick="renderAccounts()">↻ Refresh</button></div>
+          
+        </div>
+        <div class="an-kpi-grid">
+          <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#f0fdf4;color:#22c55e">💰</span><span class="an-kpi-label">Total Sale</span></div><div class="an-kpi-value" id="accTotalSale" style="color:var(--blue)">৳0</div><div class="an-kpi-foot">Active packages total</div></div>
+          <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#f0fdf4;color:#16a34a">🟢</span><span class="an-kpi-label">Customer Paid</span></div><div class="an-kpi-value" id="accCustomerPaid" style="color:var(--green)">৳0</div><div class="an-kpi-foot">Received from customers</div></div>
+          <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#fef2f2;color:#dc2626">🔴</span><span class="an-kpi-label">Customer Due</span></div><div class="an-kpi-value" id="accCustomerDue" style="color:var(--red)">৳0</div><div class="an-kpi-foot">To receive</div></div>
+          <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#f0fdf4;color:#22c55e">✅</span><span class="an-kpi-label">Vendor Paid</span></div><div class="an-kpi-value" id="accVendorPaid" style="color:var(--green)">৳0</div><div class="an-kpi-foot">Already paid</div></div>
+        </div>
+        <div class="an-kpi-grid">
+          <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#fff7ed;color:#f59e0b">🟡</span><span class="an-kpi-label">Vendor Due</span></div><div class="an-kpi-value" id="accVendorDue" style="color:var(--amber)">৳0</div><div class="an-kpi-foot">To pay vendors</div></div>
+          <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#fef2f2;color:#dc2626">♻️</span><span class="an-kpi-label">Total Refund</span></div><div class="an-kpi-value" id="accTotalRefund" style="color:var(--red)">৳0</div><div class="an-kpi-foot">Refunded to customers</div></div>
+          <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#eff6ff;color:#3b82f6">🏦</span><span class="an-kpi-label">Cash in Hand</span></div><div class="an-kpi-value" id="accCashInHand" style="color:var(--blue)">৳0</div><div class="an-kpi-foot">Available balance</div></div>
+          <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#f0fdf4;color:#22c55e">📈</span><span class="an-kpi-label">Net Profit</span></div><div class="an-kpi-value" id="accNetProfit" style="color:var(--green)">৳0</div><div class="an-kpi-foot" id="accProfitMargin">Margin: 0%</div></div>
+        </div>
+        <div class="an-card"><div class="an-card-head"><h3>📋 Customer Bill Due</h3><span class="an-badge" style="background:var(--red-bg);color:var(--red)">কত পাব</span></div><div class="table-wrap"><table><thead><tr><th>Customer</th><th>Packages</th><th>Bill</th><th>Paid</th><th>Due</th><th>Status</th></tr></thead><tbody id="accCustomerDueTable"></tbody></table></div></div>
+        <div class="an-card"><div class="an-card-head"><h3>💸 Vendor Bill Due</h3><span class="an-badge" style="background:var(--amber-bg);color:var(--amber)">কত দিব</span></div><div class="table-wrap"><table><thead><tr><th>Vendor</th><th>Bill</th><th>Paid</th><th>Due</th><th>Status</th></tr></thead><tbody id="accVendorDueTable"></tbody></table></div></div>
+        <div class="an-card"><div class="an-card-head"><h3>♻️ Refund History</h3><button class="btn btn-danger btn-sm" onclick="openRefundModal()">➕ Add Refund</button></div><div class="table-wrap"><table><thead><tr><th>Customer</th><th>Package</th><th>Amount</th><th>Date</th><th>Reason</th><th></th></tr></thead><tbody id="accRefundTable"></tbody></table></div></div>
+      </div>
+    </div>
+
+    <!-- ============ PERFORMANCE ============ -->
+    <div class="page" id="page-performance">
+      <div class="analytics-wrapper">
+        <div class="an-profile-header">
+          <div class="an-profile-left">
+            <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#22c55e,#16a34a);display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;flex-shrink:0">📈</div>
+            <div><div class="an-profile-name">Employee Performance</div><div class="an-profile-role">Team productivity & ranking</div></div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openManageEmployees()">👥 Manage Team</button>
+        </div>
+        <div id="topPerformerCard"></div>
+        <div class="an-card"><div class="an-card-head"><h3>🏆 Team Leaderboard</h3><span class="an-badge" id="perfActiveCount">0 Active</span></div><div class="table-wrap"><table><thead><tr><th>Rank</th><th>Employee</th><th>Role</th><th>Packages</th><th>Revenue</th><th>Confirmed</th><th>Performance</th></tr></thead><tbody id="perfTableBody"></tbody></table></div></div>
+        <div class="an-card"><div class="an-card-head"><h3>📊 Package Creation Trend (Last 30 Days)</h3></div><div class="an-chart-wrap"><canvas id="perfChart"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- ============ TASKS ============ -->
+    <div class="page" id="page-tasks">
+      <div class="tk-tasks-header">
+        <div class="tk-tasks-header-left">
+          <div class="tk-tasks-header-icon">✅</div>
+          <div><div class="tk-tasks-header-title">Tasks Manager</div><div class="tk-tasks-header-sub"><span class="tk-live-dot"></span><span id="tkLiveCount">Loading...</span></div></div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="tk-btn tk-btn-primary" onclick="openCreateTaskModal()">➕ New Task</button></div>
+      </div>
+      <div class="tk-stats-row">
+        <div class="tk-stat-box"><div class="tk-stat-box-icon" style="background:var(--red-bg);color:var(--red)">🔴</div><div class="tk-stat-box-value" id="tkStatOverdue">0</div><div class="tk-stat-box-label">Overdue</div></div>
+        <div class="tk-stat-box"><div class="tk-stat-box-icon" style="background:var(--amber-bg);color:var(--amber)">⏰</div><div class="tk-stat-box-value" id="tkStatToday">0</div><div class="tk-stat-box-label">Due Today</div></div>
+        <div class="tk-stat-box"><div class="tk-stat-box-icon" style="background:var(--blue-bg);color:var(--blue)">📋</div><div class="tk-stat-box-value" id="tkStatProgress">0</div><div class="tk-stat-box-label">In Progress</div></div>
+        <div class="tk-stat-box"><div class="tk-stat-box-icon" style="background:var(--green-bg);color:var(--green)">✅</div><div class="tk-stat-box-value" id="tkStatDone">0</div><div class="tk-stat-box-label">Completed</div></div>
+      </div>
+      <div class="tk-tabs">
+        <button class="tk-tab act" onclick="switchTaskTab('all', this)">📋 All <span class="tk-tab-count" id="tkTabAllCount">0</span></button>
+        <button class="tk-tab" onclick="switchTaskTab('today', this)">📅 Today <span class="tk-tab-count" id="tkTabTodayCount">0</span></button>
+        <button class="tk-tab" onclick="switchTaskTab('week', this)">🗓️ Week <span class="tk-tab-count" id="tkTabWeekCount">0</span></button>
+        <button class="tk-tab" onclick="switchTaskTab('done', this)">✅ Done <span class="tk-tab-count" id="tkTabDoneCount">0</span></button>
+      </div>
+      <div class="tk-toolbar">
+        <div class="tk-search-wrap"><input class="tk-search" type="text" placeholder="Search tasks..." oninput="searchTasks(this.value)"></div>
+        <select id="tkFilterUser" class="tk-toolbar-select" onchange="filterTasksByUser(this.value)"><option value="all">👥 All Users</option></select>
+        <select class="tk-toolbar-select" onchange="filterTasksByPriority(this.value)"><option value="all">🎯 All Priority</option><option value="high">🔴 High</option><option value="medium">🟡 Medium</option><option value="low">🟢 Low</option></select>
+      </div>
+      <div class="tk-grid" id="tkTaskGrid"><div class="tk-empty"><div class="tk-empty-icon">📋</div><div class="tk-empty-text">Loading tasks...</div></div></div>
+    </div>
+    <!-- ============ DOCUMENTS ============ -->
+    <div class="page" id="page-documents">
+      <div class="analytics-wrapper">
+        <div class="an-profile-header">
+          <div class="an-profile-left">
+            <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#3b82f6,#2563eb);display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;flex-shrink:0">📁</div>
+            <div><div class="an-profile-name">Documents</div><div class="an-profile-role">Accounts · Invoices · Receipts · Bank</div></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary btn-sm" onclick="openDocumentUpload()">📤 Upload</button><button class="btn btn-secondary btn-sm" onclick="renderDocuments()">↻ Refresh</button></div>
+        </div>
+        <div class="an-kpi-grid">
+          <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#eff6ff;color:#3b82f6">📁</span><span class="an-kpi-label">Total Files</span></div><div class="an-kpi-value" id="docTotal" style="color:var(--blue)">0</div><div class="an-kpi-foot">All documents</div></div>
+          <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#f0fdf4;color:#22c55e">🧾</span><span class="an-kpi-label">Invoices</span></div><div class="an-kpi-value" id="docInvoice" style="color:var(--green)">0</div><div class="an-kpi-foot">Customer + vendor bills</div></div>
+          <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#fff7ed;color:#f59e0b">💰</span><span class="an-kpi-label">Receipts</span></div><div class="an-kpi-value" id="docReceipt" style="color:var(--amber)">0</div><div class="an-kpi-foot">Payment receipts</div></div>
+          <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#faf5ff;color:#a855f7">🏦</span><span class="an-kpi-label">Bank Docs</span></div><div class="an-kpi-value" id="docBank" style="color:var(--purple)">0</div><div class="an-kpi-foot">Statements</div></div>
+        </div>
+        <div class="an-card"><div class="an-card-head"><h3>📂 Categories</h3></div><div id="docCategoryGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px"></div></div>
+        <div class="an-card" style="padding:14px"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input type="text" id="docSearch" class="tk-input" placeholder="🔍 Search title, vendor, package..." style="flex:1;min-width:200px" oninput="renderDocuments()"><select id="docFilterType" class="tk-input" style="min-width:150px" onchange="renderDocuments()"><option value="all">📋 All Types</option><option value="bill">🧾 Customer Bill</option><option value="invoice">🧾 Vendor Invoice</option><option value="receipt">💰 Receipt</option><option value="bank">🏦 Bank Statement</option><option value="voucher">📑 Voucher</option><option value="vat">🧮 VAT/Tax</option><option value="refund">♻️ Refund</option><option value="contract">📋 Contract</option><option value="cashbook">💵 Cash Book</option><option value="other">📦 Other</option></select><select id="docFilterMonth" class="tk-input" style="min-width:130px" onchange="renderDocuments()"><option value="all">📅 All Time</option><option value="thismonth">This Month</option><option value="lastmonth">Last Month</option><option value="thisyear">This Year</option></select></div></div>
+        <div class="an-card"><div class="an-card-head"><h3>📄 All Documents</h3><span class="an-badge" id="docCountBadge">0 files</span></div><div id="docList"></div></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+<!-- ============ STICKY SUMMARY ============ -->
+<div class="sticky-summary" id="stickySummary">
+  <div class="ss-info">
+    <div class="ss-item"><div class="ss-lbl">Vendor Cost</div><div class="ss-val" id="ssSubTotal">৳ 0</div></div>
+    <div class="ss-item"><div class="ss-lbl">Selling</div><div class="ss-val primary" id="ssGrandTotal">৳ 0</div></div>
+    <div class="ss-item"><div class="ss-lbl">Profit</div><div class="ss-val green" id="ssProfit">৳ 0</div></div>
+    <div class="ss-item"><div class="ss-lbl">Per Person</div><div class="ss-val" id="ssPerPerson">৳ 0</div></div>
+  </div>
+  <div class="ss-actions"><button class="btn btn-secondary btn-sm" onclick="closeModal('builderModal')">Cancel</button><button class="btn btn-primary" onclick="savePackage()">💾 Save Package</button></div>
+</div>
+
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div><div class="loading-text" id="loadingText">Loading...</div></div>
+
+<!-- ============ WHATSAPP SHARE MODAL ============ -->
+<div class="modal-bg" id="whatsappShareModal">
+  <div class="modal narrow">
+    <div class="modal-head"><h2>📱 Share via WhatsApp</h2><button class="close-btn" onclick="closeModal('whatsappShareModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="waPkgId">
+      <div style="padding:14px;background:linear-gradient(135deg,var(--green-bg),var(--card));border-radius:12px;margin-bottom:18px;border-left:3px solid var(--green)"><div style="font-size:12px;font-weight:800;color:var(--green);margin-bottom:4px">📄 Package</div><div style="font-size:14px;font-weight:800" id="waPkgName">—</div></div>
+      <div class="field" style="margin-bottom:14px"><label>WhatsApp Number <span class="req">*</span></label><input type="text" id="waPhoneInput" placeholder="01XXXXXXXXX" oninput="clearError('waPhoneInput')"><div class="err-msg">Valid phone number দিন</div></div>
+      <div style="display:flex;gap:8px;margin-top:18px"><button class="btn btn-secondary" style="flex:1" onclick="waJustMessage()">💬 Message</button><button class="btn btn-green" style="flex:1" onclick="waWithPDF()">📄 PDF + Message</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ FINANCIAL DETAIL MODAL ============ -->
+<div class="modal-bg" id="financialDetailModal">
+  <div class="modal wide">
+    <div class="modal-head"><h2 id="finDetailTitle">📊 Financial Details</h2><button class="close-btn" onclick="closeModal('financialDetailModal')">✕</button></div>
+    <div class="modal-body" id="finDetailBody"></div>
+    <div class="modal-foot"><div></div><div class="right-actions"><button class="btn btn-secondary" onclick="closeModal('financialDetailModal')">Close</button><button class="btn btn-primary" onclick="printFinancialDetail()">🖨️ Print</button></div></div>
+  </div>
+</div>
+<!-- ============ VENDOR DETAIL MODAL ============ -->
+<div class="modal-bg" id="vendorDetailModal">
+  <div class="modal wide">
+    <div class="modal-head"><h2 id="vendorDetailTitle">🏢 Vendor Details</h2><button class="close-btn" onclick="closeModal('vendorDetailModal')">✕</button></div>
+    <div class="modal-body" id="vendorDetailBody"></div>
+    <div class="modal-foot"><div class="left-actions"><button class="btn btn-secondary btn-sm" onclick="openVendorSetupFromView()">✏️ Edit Vendor</button></div><div class="right-actions"><button class="btn btn-secondary" onclick="closeModal('vendorDetailModal')">Close</button></div></div>
+  </div>
+</div>
+<!-- ============ CUSTOMER VIEW MODAL ============ -->
+<div class="modal-bg" id="customerViewModal">
+  <div class="modal wide">
+    <div class="modal-head"><h2>👤 Details</h2><button class="close-btn" onclick="closeModal('customerViewModal')">✕</button></div>
+    <div class="modal-body" id="customerViewBody"></div>
+  </div>
+</div>
+
+<!-- ============ PAYMENT MODAL ============ -->
+<div class="modal-bg" id="paymentModal">
+  <div class="modal narrow">
+    <div class="modal-head"><h2 id="paymentModalTitle">💰 Add Payment</h2><button class="close-btn" onclick="closeModal('paymentModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="payTargetId"><input type="hidden" id="payTargetType"><input type="hidden" id="payPackageId">
+      
+      <div class="field" style="margin-bottom:14px">
+        <label>Payment For</label>
+        <input type="text" id="payTargetName" readonly>
+      </div>
+
+      <!-- ⭐ Payment Category -->
+      <div class="field" id="payVendorCategoryField" style="display:none; margin-bottom:14px">
+        <label>Payment Category</label>
+        <select id="payVendorCategory">
+          <option value="hotel">🕌 Hotel</option>
+          <option value="transport">▣ Transport</option>
+          <option value="visa">▤ Visa</option>
+          <option value="service">▦ Service</option>
+          <option value="ziyarah">★ Ziyarah</option>
+          <option value="flight">✈ Flight</option>
+        </select>
+      </div>
+
+      <!-- ⭐ Hotel Allocation -->
+      <div class="field" id="payVendorAllocationField" style="display:none; margin-bottom:14px">
+        <label>Hotel Allocation (Optional)</label>
+        <select id="payVendorAllocation">
+          <option value="">-- General Payment --</option>
+        </select>
+      </div>
+
+      <div class="grid-2">
+        <div class="field"><label>Amount (৳) <span class="req">*</span></label><input type="number" id="payAmount" min="0"><div class="err-msg">Required</div></div>
+        <div class="field"><label>Date</label><input type="date" id="payDate"></div>
+        <div class="field"><label>Method</label><select id="payMethod"><option>Cash</option><option>Bank Transfer</option><option>bKash</option><option>Nagad</option><option>Rocket</option><option>Cheque</option><option>Other</option></select></div>
+        <div class="field"><label>Reference</label><input type="text" id="payReference"></div>
+        <div class="field" style="grid-column:1/-1"><label>Notes</label><input type="text" id="payNotes"></div>
+      </div>
+      
+      <div style="margin-top:12px;padding:12px 14px;background:var(--bg-2);border-radius:10px;font-size:12px;line-height:1.8">
+        <div>Total: <b id="payTotal">৳0</b></div>
+        <div>Already Paid: <b id="payAlready">৳0</b></div>
+        <div>Due: <b id="payDue" style="color:var(--red)">৳0</b></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <div></div>
+      <div class="right-actions">
+        <button class="btn btn-secondary" onclick="closeModal('paymentModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="savePayment()">💾 Save Payment</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ VENDOR PAYMENT MODAL ============ -->
+<div class="modal-bg" id="vendorPaymentModal">
+  <div class="modal narrow">
+    <div class="modal-head"><h2>💸 Record Vendor Payment</h2><button class="close-btn" onclick="closeModal('vendorPaymentModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="vpPackageId"><input type="hidden" id="vpCategory">
+      <div class="field" style="margin-bottom:14px"><label>Category</label><input type="text" id="vpCategoryName" readonly style="background:var(--bg-2);font-weight:800;color:var(--primary)"></div>
+      <div class="field" style="margin-bottom:14px"><label>Select Vendor <span class="req">*</span></label><select id="vpVendorId"></select><div class="err-msg">Required</div></div>
+      <div class="field" id="vpHotelAllocationField" style="margin-bottom:14px;display:none"><label>Hotel Allocation</label><select id="vpHotelKey" onchange="onHotelAllocationChange()"><option value="">-- All Hotel Cost --</option></select></div>
+      <div class="grid-2">
+        <div class="field"><label>Amount (৳) <span class="req">*</span></label><input type="number" id="vpAmount" min="0"><div class="err-msg">Required</div></div>
+        <div class="field"><label>Date</label><input type="date" id="vpDate"></div>
+        <div class="field"><label>Method</label><select id="vpMethod"><option>Cash</option><option>Bank Transfer</option><option>bKash</option><option>Nagad</option><option>Cheque</option><option>Other</option></select></div>
+        <div class="field"><label>Reference</label><input type="text" id="vpReference"></div>
+        <div class="field" style="grid-column:1/-1"><label>Notes</label><input type="text" id="vpNotes"></div>
+      </div>
+      <div style="margin-top:14px;padding:14px;background:linear-gradient(135deg,var(--primary-bg),var(--bg-2));border-radius:10px;font-size:12.5px;line-height:2;border-left:3px solid var(--primary)"><div>📊 <b>Category Cost:</b> <span id="vpTotal" style="font-weight:800">৳0</span></div><div>✅ <b>Already Paid:</b> <span id="vpAlready" style="color:var(--green);font-weight:800">৳0</span></div><div>⏳ <b>Due to Vendor:</b> <span id="vpDue" style="color:var(--red);font-weight:800">৳0</span></div></div>
+    </div>
+    <div class="modal-foot"><div></div><div class="right-actions"><button class="btn btn-secondary" onclick="closeModal('vendorPaymentModal')">Cancel</button><button class="btn btn-primary" onclick="saveVendorPayment()">💾 Save Payment</button></div></div>
+  </div>
+</div>
+
+<!-- ============ HOTEL MODAL ============ -->
+<div class="modal-bg" id="hotelSetupModal">
+  <div class="modal narrow">
+    <div class="modal-head"><h2 id="hotelModalTitle">🕌 Add Hotel</h2><button class="close-btn" onclick="closeModal('hotelSetupModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="hsCityType"><input type="hidden" id="hsEditId">
+      <div class="section">
+        <div class="section-header"><div class="left"><div class="num">1</div><h3>Hotel Details</h3></div></div>
+        <div class="section-body">
+          <div class="field"><label>Hotel Name <span class="req">*</span></label><input type="text" id="hsName"><div class="err-msg">Required</div></div>
+          <div class="grid-3" style="margin-top:14px">
+            <div class="field"><label>Distance</label><input type="text" id="hsDistance"></div>
+            <div class="field"><label>Star</label><select id="hsStar"><option value="3">⭐⭐⭐ 3 Star</option><option value="4" selected>⭐⭐⭐⭐ 4 Star</option><option value="5">⭐⭐⭐⭐⭐ 5 Star</option></select></div>
+            <div class="field"><label>Source Vendor</label><select id="hsVendorId" onchange="onHotelSourceVendorChange()"><option value="">-- No Vendor --</option></select></div>
+          </div>
+          <div class="field" style="margin-top:14px"><label>Vendor Rate Record</label><select id="hsVendorHotelItemId"><option value="">-- Match hotel name automatically --</option></select><small style="display:block;margin-top:5px;color:var(--text-3)">Use this when the vendor's hotel name is different from the hotel name above.</small></div>
+          <div class="grid-2" style="margin-top:14px"><div class="field"><label>📅 Valid From</label><input type="date" id="hsValidFrom"></div><div class="field"><label>📅 Valid Until</label><input type="date" id="hsValidUntil"></div></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-header"><div class="left"><div class="num">2</div><h3>💰 Hotel Room Rates (Per Night)</h3></div></div>
+        <div class="section-body">
+          <small style="display:block;margin-bottom:12px;color:var(--text-3)">These rates appear as Vendor Cost/Night in the package builder. Set the customer Sell Price separately in the package.</small>
+          <div class="room-rate-grid">
+            <div class="room-rate-card"><div class="rr-head">Quad</div><div class="rr-sub">4 persons</div><input type="number" id="hsQuad" min="0"></div>
+            <div class="room-rate-card"><div class="rr-head">Triple</div><div class="rr-sub">3 persons</div><input type="number" id="hsTriple" min="0"></div>
+            <div class="room-rate-card"><div class="rr-head">Double</div><div class="rr-sub">2 persons</div><input type="number" id="hsDouble" min="0"></div>
+            <div class="room-rate-card"><div class="rr-head">Single</div><div class="rr-sub">1 person</div><input type="number" id="hsSingle" min="0"></div>
+          </div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-header"><div class="left"><div class="num">3</div><h3>🍽️ Meal Rates</h3></div></div>
+        <div class="section-body"><div class="grid-3"><div class="field"><label>🍳 Breakfast</label><input type="number" id="hsBreakfast" min="0"></div><div class="field"><label>🍱 Half Board</label><input type="number" id="hsHalfBoard" min="0"></div><div class="field"><label>🍽️ Full Board</label><input type="number" id="hsFullBoard" min="0"></div></div></div>
+      </div>
+      <div class="section"><div class="section-header"><div class="left"><div class="num">4</div><h3>📷 Hotel Images</h3></div></div><div class="section-body"><div class="img-grid" id="hotelImgGrid"></div></div></div>
+    </div>
+    <div class="modal-foot"><div></div><div class="right-actions"><button class="btn btn-secondary" onclick="closeModal('hotelSetupModal')">Cancel</button><button class="btn btn-primary" onclick="saveHotelSetup()">💾 Save</button></div></div>
+  </div>
+</div>
+
+<!-- ============ VENDOR TO HOTEL MODAL ============ -->
+<div class="modal-bg" id="vendorToHotelModal">
+  <div class="modal narrow">
+    <div class="modal-head"><h2>🏢 Vendor → Hotel</h2><button class="close-btn" onclick="closeModal('vendorToHotelModal')">✕</button></div>
+    <div class="modal-body"><input type="hidden" id="vthCityType"><div class="field" style="margin-bottom:14px"><label>Select Vendor <span class="req">*</span></label><select id="vthVendorId"></select></div></div>
+    <div class="modal-foot"><div></div><div class="right-actions"><button class="btn btn-secondary" onclick="closeModal('vendorToHotelModal')">Cancel</button><button class="btn btn-primary" onclick="proceedVendorToHotel()">Next →</button></div></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="flightSetupModal">
+  <div class="modal narrow">
+    <div class="modal-head"><h2 id="flightModalTitle">✈ Add Flight</h2><button class="close-btn" onclick="closeModal('flightSetupModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="fsEditId">
+      
+      <!-- Trip Type -->
+      <div class="field" style="margin-bottom:14px">
+        <label>Trip Type</label>
+        <select id="fsTripType" onchange="toggleFlightForms()">
+          <option value="one_way">One Way</option>
+          <option value="round_trip" selected>Round Trip</option>
+        </select>
+      </div>
+
+      <!-- Going Flight Section -->
+      <div class="section">
+        <div class="section-header"><div class="left"><div class="num">🛫</div><h3 id="fsGoingLabel">Going Flight</h3></div></div>
+        <div class="section-body">
+          <div class="grid-2">
+            <div class="field"><label>From <span class="req">*</span></label><input type="text" id="fsFrom"><div class="err-msg">Required</div></div>
+            <div class="field"><label>To <span class="req">*</span></label><input type="text" id="fsTo"><div class="err-msg">Required</div></div>
+            <div class="field" style="grid-column:1/-1"><label>Airline</label><input type="text" id="fsAirline"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Return Flight Section -->
+      <div class="section" id="returnFlightSection">
+        <div class="section-header"><div class="left"><div class="num">🛬</div><h3>Return Flight</h3></div></div>
+        <div class="section-body">
+          <div class="grid-2">
+            <div class="field"><label>From <span class="req">*</span></label><input type="text" id="fsReturnFrom"><div class="err-msg">Required</div></div>
+            <div class="field"><label>To <span class="req">*</span></label><input type="text" id="fsReturnTo"><div class="err-msg">Required</div></div>
+            <div class="field" style="grid-column:1/-1"><label>Airline</label><input type="text" id="fsReturnAirline"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⭐ Combined Pricing Section -->
+      <div class="section">
+        <div class="section-header"><div class="left"><div class="num">💰</div><h3>Total Fare (Per Person)</h3></div></div>
+        <div class="section-body">
+          <div class="grid-2">
+            <div class="field">
+              <label>Adult Selling Price (৳)</label>
+              <input type="number" id="fsFareAdult" min="0" placeholder="Total adult price (both ways)">
+            </div>
+            <div class="field">
+              <label>Adult Vendor Cost (৳)</label>
+              <input type="number" id="fsCostAdult" min="0" placeholder="Total vendor cost (both ways)">
+            </div>
+
+            <div class="field">
+              <label>Child Selling Price (৳)</label>
+              <input type="number" id="fsFareChild" min="0" placeholder="Total child price">
+            </div>
+            <div class="field">
+              <label>Child Vendor Cost (৳)</label>
+              <input type="number" id="fsCostChild" min="0" placeholder="Total child vendor cost">
+            </div>
+
+            <div class="field">
+              <label>Infant Selling Price (৳)</label>
+              <input type="number" id="fsFareInfant" min="0" placeholder="Total infant price">
+            </div>
+            <div class="field">
+              <label>Infant Vendor Cost (৳)</label>
+              <input type="number" id="fsCostInfant" min="0" placeholder="Total infant vendor cost">
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-foot">
+      <div></div>
+      <div class="right-actions">
+        <button class="btn btn-secondary" onclick="closeModal('flightSetupModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveFlightSetup()">💾 Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="transportSetupModal">
+  <div class="modal narrow" style="max-width: 600px;">
+    <div class="modal-head">
+      <h2 id="transportModalTitle">▣ Add Transport</h2>
+      <button class="close-btn" onclick="closeModal('transportSetupModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="tsEditId">
+      
+<!-- Route Section -->
+<div class="grid-2">
+  <div class="field">
+    <label>From <span class="req">*</span></label>
+    <!-- ⭐ Bullet Train এর জন্য Select -->
+    <select id="tsFromSelect" style="display:none" onchange="syncRouteInputs()">
+      <option value="Makkah">Makkah</option>
+      <option value="Madinah">Madinah</option>
+      <option value="Al-Sulimaniyah">Al-Sulimaniyah</option>
+      <option value="Jeddah Airport">Jeddah Airport</option>
+      <option value="KAEC">KAEC</option>
+    </select>
+    <!-- ⭐ অন্যান্য ভেহিকেলের জন্য Text Input -->
+    <input type="text" id="tsFrom" placeholder="e.g., Jeddah Airport">
+  </div>
+  <div class="field">
+    <label>To <span class="req">*</span></label>
+    <!-- ⭐ Bullet Train এর জন্য Select -->
+    <select id="tsToSelect" style="display:none" onchange="syncRouteInputs()">
+      <option value="Madinah">Madinah</option>
+      <option value="Makkah">Makkah</option>
+      <option value="Al-Sulimaniyah">Al-Sulimaniyah</option>
+      <option value="Jeddah Airport">Jeddah Airport</option>
+      <option value="KAEC">KAEC</option>
+    </select>
+    <!-- ⭐ অন্যান্য ভেহিকেলের জন্য Text Input -->
+    <input type="text" id="tsTo" placeholder="e.g., Makkah Hotel">
+  </div>
+</div>
+
+      <!-- Vehicle Type & Class -->
+      <div class="grid-2" style="margin-top:14px">
+        <div class="field">
+          <label>Vehicle</label>
+          <select id="tsVehicle" onchange="onVehicleChange()">
+            <option value="Sedan">🚗 Sedan (4)</option>
+            <option value="7-Seater">🚐 7-Seater (7)</option>
+            <option value="Hiace" selected>🚐 Hiace (12)</option>
+            <option value="GMC">🚐 GMC (7)</option>
+            <option value="Coaster">🚌 Coaster (22)</option>
+            <option value="Bullet Train">🚄 Haramain Bullet Train</option>
+          </select>
+        </div>
+        <div class="field" id="tsTrainClassField" style="display:none">
+          <label>Train Class</label>
+          <select id="tsTrainClass">
+            <option value="Economy">Economy</option>
+            <option value="Business">Business</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- ⭐ Passenger-wise Pricing (Only for Bullet Train) -->
+      <div id="tsPassengerPricing" style="display:none; margin-top:20px;">
+        <div style="font-size:13px; font-weight:800; color:var(--text-2); margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+          Passenger-wise Pricing (৳)
+          <div style="font-size:11px; font-weight:500; color:var(--text-3); margin-top:2px;">প্রতি যাত্রীর বিক্রয়মূল্য ও প্রকৃত খরচ</div>
+        </div>
+
+        <!-- Adult -->
+        <div style="padding:14px; background:var(--bg-2); border-radius:10px; margin-bottom:10px;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+            <span style="font-size:16px;">👤</span>
+            <div>
+              <div style="font-size:13px; font-weight:800;">Adult</div>
+              <div style="font-size:10.5px; color:var(--text-3);">Per Person</div>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label>Selling Price (৳) *</label><input type="number" id="tsAdultSell" min="0" value="0"></div>
+            <div class="field"><label>Vendor Cost (৳)</label><input type="number" id="tsAdultCost" min="0" value="0"></div>
+          </div>
+        </div>
+
+        <!-- Child -->
+        <div style="padding:14px; background:var(--bg-2); border-radius:10px; margin-bottom:10px;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+            <span style="font-size:16px;">🧒</span>
+            <div>
+              <div style="font-size:13px; font-weight:800;">Child</div>
+              <div style="font-size:10.5px; color:var(--text-3);">Per Person</div>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label>Selling Price (৳) *</label><input type="number" id="tsChildSell" min="0" value="0"></div>
+            <div class="field"><label>Vendor Cost (৳)</label><input type="number" id="tsChildCost" min="0" value="0"></div>
+          </div>
+        </div>
+
+        <!-- Infant -->
+        <div style="padding:14px; background:var(--bg-2); border-radius:10px; margin-bottom:10px;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+            <span style="font-size:16px;">👶</span>
+            <div>
+              <div style="font-size:13px; font-weight:800;">Infant</div>
+              <div style="font-size:10.5px; color:var(--text-3);">Per Person</div>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label>Selling Price (৳) *</label><input type="number" id="tsInfantSell" min="0" value="0"></div>
+            <div class="field"><label>Vendor Cost (৳)</label><input type="number" id="tsInfantCost" min="0" value="0"></div>
+          </div>
+        </div>
+
+        <div style="padding:12px 14px; background:linear-gradient(135deg, #eff6ff, transparent); border-left:3px solid var(--blue); border-radius:8px; font-size:11.5px; color:var(--text-2); margin-top:14px;">
+          <b>🔄 Automatic Calculation:</b><br>
+          প্যাকেজের Adult, Child ও Infant সংখ্যার ভিত্তিতে মোট বিক্রয়মূল্য ও Vendor Cost হিসাব হবে।
+        </div>
+      </div>
+
+      <!-- Standard Pricing (Only for other vehicles) -->
+      <div id="tsStandardPricing" style="margin-top:20px;">
+        <div class="grid-2">
+          <div class="field"><label>Sell Price (৳) *</label><input type="number" id="tsPrice" min="0" placeholder="Customer Selling Price"></div>
+          <div class="field"><label>Vendor Cost (৳)</label><input type="number" id="tsVendorCost" min="0" placeholder="Actual Vendor Cost"></div>
+        </div>
+        <div class="grid-2" style="margin-top:14px">
+          <div class="field"><label>Price Type</label><select id="tsPriceType"><option value="per_vehicle">Per Vehicle</option><option value="per_person">Per Person</option></select></div>
+          <div class="field"><label>Vehicle Count</label><input type="number" id="tsVehicleCount" value="1" min="1"></div>
+        </div>
+        <div class="grid-2" style="margin-top:14px">
+          <div class="field"><label>Capacity</label><input type="number" id="tsCapacity" value="12" min="1"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <div></div>
+      <div class="right-actions">
+        <button class="btn btn-secondary" onclick="closeModal('transportSetupModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveTransportSetup()">💾 Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ VISA MODAL ============ -->
+<div class="modal-bg" id="visaSetupModal">
+  <div class="modal narrow">
+    <div class="modal-head"><h2 id="visaModalTitle">▤ Add Visa</h2><button class="close-btn" onclick="closeModal('visaSetupModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="vsEditId">
+      <div class="field"><label>Visa Type <span class="req">*</span></label><input type="text" id="vsName"><div class="err-msg">Required</div></div>
+      <div class="grid-2" style="margin-top:14px"><div class="field"><label>Validity (Days)</label><input type="number" id="vsValidity" value="90" min="1"></div><div class="field"><label>Processing</label><input type="text" id="vsProcessing"></div></div>
+      <div class="section-divider">Fee Structure (Selling)</div>
+      <div class="grid-3"><div class="field"><label>Adult Fee</label><input type="number" id="vsPriceAdult" min="0"></div><div class="field"><label>Child Fee</label><input type="number" id="vsPriceChild" min="0"></div><div class="field"><label>Infant Fee</label><input type="number" id="vsPriceInfant" min="0"></div></div>
+      <div class="section-divider">Vendor Cost</div>
+      <div class="grid-3"><div class="field"><label>Adult Cost</label><input type="number" id="vsCostAdult" min="0"></div><div class="field"><label>Child Cost</label><input type="number" id="vsCostChild" min="0"></div><div class="field"><label>Infant Cost</label><input type="number" id="vsCostInfant" min="0"></div></div>
+    </div>
+    <div class="modal-foot"><div></div><div class="right-actions"><button class="btn btn-secondary" onclick="closeModal('visaSetupModal')">Cancel</button><button class="btn btn-primary" onclick="saveVisaSetup()">💾 Save</button></div></div>
+  </div>
+</div>
+
+<!-- ============ ZIYARAH MODAL ============ -->
+<div class="modal-bg" id="ziyarahSetupModal">
+  <div class="modal wide">
+    <div class="modal-head"><h2 id="ziyarahModalTitle">★ Add Ziyarah</h2><button class="close-btn" onclick="closeModal('ziyarahSetupModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="zsEditId">
+      <div class="section">
+        <div class="section-header"><div class="left"><div class="num">1</div><h3>Basic Info</h3></div></div>
+        <div class="section-body">
+          <div class="grid-3"><div class="field"><label>Name <span class="req">*</span></label><input type="text" id="zsName"><div class="err-msg">Required</div></div><div class="field"><label>City</label><select id="zsCity"><option>Makkah</option><option>Madinah</option></select></div><div class="field"><label>Duration</label><input type="text" id="zsDuration"></div></div>
+        </div>
+      </div>
+      <div class="section"><div class="section-header"><div class="left"><div class="num">2</div><h3>📝 Description</h3></div></div><div class="section-body"><div class="field"><textarea id="zsMainDesc" rows="4"></textarea></div></div></div>
+      <div class="section">
+        <div class="section-header"><div class="left"><div class="num">3</div><h3>📍 Places to Visit</h3><span class="count" id="zsPlacesCount">0</span></div><button class="btn btn-primary btn-sm" onclick="addZiyarahPlaceRow()">➕ Add Place</button></div>
+        <div class="section-body"><div id="zsPlacesList"></div></div>
+      </div>
+      <div class="section">
+        <div class="section-header"><div class="left"><div class="num">4</div><h3>🚗 Car Rates</h3></div></div>
+        <div class="section-body">
+          <div class="car-rates-grid">
+            <div class="car-rate-card"><div class="cr-icon">🚗</div><div class="cr-name">Sedan</div><div class="cr-seats">4 seats</div><input type="number" id="zsCarSedan" min="0"></div>
+            <div class="car-rate-card"><div class="cr-icon">🚐</div><div class="cr-name">7-Seater</div><div class="cr-seats">7 seats</div><input type="number" id="zsCar7Seater" min="0"></div>
+            <div class="car-rate-card"><div class="cr-icon">🚐</div><div class="cr-name">Hiace</div><div class="cr-seats">12 seats</div><input type="number" id="zsCarHiace" min="0"></div>
+            <div class="car-rate-card"><div class="cr-icon">🚌</div><div class="cr-name">Coaster</div><div class="cr-seats">22 seats</div><input type="number" id="zsCarCoaster" min="0"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot"><div></div><div class="right-actions"><button class="btn btn-secondary" onclick="closeModal('ziyarahSetupModal')">Cancel</button><button class="btn btn-primary" onclick="saveZiyarahSetup()">💾 Save</button></div></div>
+  </div>
+</div>
+
+<!-- ============ SERVICE MODAL ============ -->
+<div class="modal-bg" id="serviceSetupModal">
+  <div class="modal narrow">
+    <div class="modal-head"><h2 id="serviceModalTitle">▦ Add Service</h2><button class="close-btn" onclick="closeModal('serviceSetupModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="svcEditId">
+      <div class="field"><label>Service Name <span class="req">*</span></label><input type="text" id="svcName"><div class="err-msg">Required</div></div>
+      <div class="grid-2" style="margin-top:14px"><div class="field"><label>Price Type</label><select id="svcPriceType"><option value="per_person">Per Person</option><option value="per_group">Per Group</option></select></div><div class="field"><label>Price (৳)</label><input type="number" id="svcPrice" min="0"></div></div>
+    </div>
+    <div class="modal-foot"><div></div><div class="right-actions"><button class="btn btn-secondary" onclick="closeModal('serviceSetupModal')">Cancel</button><button class="btn btn-primary" onclick="saveServiceSetup()">💾 Save</button></div></div>
+  </div>
+</div>
+
+<!-- ============ BUILDER MODAL ============ -->
+<div class="modal-bg" id="builderModal">
+  <div class="modal wide">
+    <div class="modal-head"><h2 id="builderTitle">🕋 New Umrah Package</h2><button class="close-btn" onclick="closeModal('builderModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="section">
+        <div class="section-header"><div class="left"><div class="num">1</div><h3>📋 Basic Info</h3></div></div>
+        <div class="section-body">
+          <div class="grid-3">
+            <div class="field"><label>Package Title</label><input type="text" id="pkgName"></div>
+            <div class="field"><label>Quotation Ref</label><div style="display:flex;gap:6px"><input type="text" id="pkgRefNo" readonly style="flex:1"><button class="btn btn-secondary btn-sm" onclick="regenerateRefNo()">🔄</button></div></div>
+            <div class="field"><label>Package Type</label><select id="pkgType"><option>Economy</option><option selected>Standard</option><option>Premium</option><option>VIP</option><option>Ramadan</option></select></div>
+            <div class="field"><label>Status</label><select id="pkgStatus"><option>Draft</option><option>Quoted</option><option>Follow-up</option><option>Confirmed</option><option>Paid</option><option>Visa Processing</option><option>Ticketed</option><option>Completed</option><option>Cancelled</option><option>No Response</option></select></div>
+            <div class="field"><label>Check In</label><input type="date" id="pkgCheckIn" onchange="calcDuration()"></div>
+            <div class="field"><label>Check Out</label><input type="date" id="pkgCheckOut" onchange="calcDuration()"></div>
+            <div class="field"><label>Nights / Days</label><input type="text" id="pkgNights" value="0 Nights / 0 Days" readonly></div>
+            <div class="field"><label>Valid Until</label><input type="date" id="pkgValidUntil"></div>
+            <div class="field"><label>Follow-up Date</label><input type="date" id="pkgFollowupDate"></div>
+            <div class="field"><label>Reference</label><input type="text" id="pkgReference"></div>
+          </div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-header"><div class="left"><div class="num">2</div><h3>👥 Passengers</h3></div></div>
+        <div class="section-body">
+          <div class="grid-4"><div class="field"><label>Adults</label><input type="number" id="paxAdult" value="2" min="1" oninput="recalc()"></div><div class="field"><label>Children</label><input type="number" id="paxChild" value="0" min="0" oninput="recalc()"></div><div class="field"><label>Infants</label><input type="number" id="paxInfant" value="0" min="0" oninput="recalc()"></div><div class="field"><label>Child With Bed</label><input type="number" id="childWithBed" value="0" min="0" oninput="recalc()"></div></div>
+          <div class="grid-2" style="margin-top:12px"><div class="field"><label>Child No Bed</label><input type="number" id="childNoBed" value="0" min="0" oninput="recalc()"></div><div class="field"><label>Total</label><input type="text" id="totalGuestsDisplay" value="2" readonly></div></div>
+        </div>
+      </div>
+      <div class="section"><div class="section-header"><div class="left"><div class="num">3</div><h3>🕌 Makkah Stay</h3><span class="count" id="makkahHotelCount">0</span></div></div><div class="section-body"><div id="makkahHotelsList"></div><button class="add-btn" onclick="addMakkahHotel()">➕ Add Makkah Hotel</button></div></div>
+      <div class="section"><div class="section-header"><div class="left"><div class="num">4</div><h3>🕌 Madinah Stay</h3><span class="count" id="madinahHotelCount">0</span></div></div><div class="section-body"><div id="madinahHotelsList"></div><button class="add-btn" onclick="addMadinahHotel()">➕ Add Madinah Hotel</button></div></div>
+      <div class="section"><div class="section-header"><div class="left"><div class="num">5</div><h3>✈ Flight</h3><span class="count" id="flightCount">0</span></div></div><div class="section-body"><div id="flightsList"></div><button class="add-btn" onclick="addFlightItem()">➕ Add Flight</button></div></div>
+      <div class="section"><div class="section-header"><div class="left"><div class="num">6</div><h3>▣ Transport</h3><span class="count" id="transportCount">0</span></div></div><div class="section-body"><div id="transportsList"></div><button class="add-btn" onclick="addTransportItem()">➕ Add Transport</button></div></div>
+      <div class="section"><div class="section-header"><div class="left"><div class="num">7</div><h3>▤ Visa</h3><span class="count" id="visaCount">0</span></div></div><div class="section-body"><div id="visasList"></div><button class="add-btn" onclick="addVisaItem()">➕ Add Visa</button></div></div>
+      <div class="section"><div class="section-header"><div class="left"><div class="num">8</div><h3>★ Ziyarah Transport</h3><span class="count" id="ziyarahCount">0</span></div></div><div class="section-body"><div id="ziyarahTransportList"></div><button class="add-btn" onclick="addZiyarahTransportItem()">➕ Add Ziyarah</button></div></div>
+      <div class="section"><div class="section-header"><div class="left"><div class="num">9</div><h3>📅 Itinerary</h3><span class="count" id="itineraryCount">0</span></div></div><div class="section-body"><div id="itineraryList"></div><button class="add-btn" onclick="addItineraryItem()">➕ Add Day</button></div></div>
+      <div class="section"><div class="section-header"><div class="left"><div class="num">10</div><h3>✅ Inclusions</h3></div><button class="btn btn-secondary btn-xs" onclick="addInclusionItem()">➕ Add</button></div><div class="section-body"><div id="inclusionsList" class="item-list-editable"></div></div></div>
+      <div class="section"><div class="section-header"><div class="left"><div class="num">11</div><h3>❌ Exclusions</h3></div><button class="btn btn-secondary btn-xs" onclick="addExclusionItem()">➕ Add</button></div><div class="section-body"><div id="exclusionsList" class="item-list-editable"></div></div></div>
+      <div class="section"><div class="section-header"><div class="left"><div class="num">12</div><h3>📝 Important Notes</h3></div><button class="btn btn-secondary btn-xs" onclick="addImportantNoteItem()">➕ Add</button></div><div class="section-body"><div id="importantNotesList" class="item-list-editable"></div></div></div>
+      <div class="section">
+        <div class="section-header"><div class="left"><div class="num">13</div><h3>📋 Terms and Policies</h3></div></div>
+        <div class="section-body">
+          <div style="padding:12px 14px;background:linear-gradient(135deg,rgba(59,130,246,.06),transparent);border-left:3px solid var(--blue);border-radius:8px;margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:12.5px;font-weight:800;color:var(--blue)">💳 Payment Terms</div><button class="btn btn-secondary btn-xs" onclick="addPaymentTermItem()">➕ Add</button></div><div id="paymentTermsList" class="item-list-editable"></div></div>
+          <div style="padding:12px 14px;background:linear-gradient(135deg,rgba(239,68,68,.06),transparent);border-left:3px solid var(--red);border-radius:8px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:12.5px;font-weight:800;color:var(--red)">❌ Cancellation Policy</div><button class="btn btn-secondary btn-xs" onclick="addCancellationPolicyItem()">➕ Add</button></div><div id="cancellationPolicyList" class="item-list-editable"></div></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-header"><div class="left"><div class="num">14</div><h3>👤 Customer Info</h3></div></div>
+        <div class="section-body">
+          <div class="grid-3">
+            <div class="field"><label>Customer Name <span class="req">*</span></label><input type="text" id="pkgCustomerName"><div class="err-msg">Required</div></div>
+            <div class="field"><label>Phone</label><input type="text" id="pkgCustomerPhone"></div>
+            <div class="field"><label>Passport</label><input type="text" id="pkgCustomerPassport"></div>
+            <div class="field"><label>Email</label><input type="email" id="pkgCustomerEmail"></div>
+            <div class="field"><label>Nationality</label><input type="text" id="pkgCustomerNationality" value="Bangladeshi"></div>
+            <div class="field"><label>Special Request</label><input type="text" id="pkgSpecialRequest"></div>
+          </div>
+        </div>
+      </div>
+      <div class="summary-section">
+        <h3>💰 Total Calculation</h3>
+        <div class="summary-grid">
+          <div class="summary-item"><div class="s-label">🏨 Hotel (Sell)</div><div class="s-val" id="sumHotel">৳ 0</div></div>
+          <div class="summary-item"><div class="s-label">✈ Flight (Sell)</div><div class="s-val" id="sumFlight">৳ 0</div></div>
+          <div class="summary-item"><div class="s-label">▣ Transport (Sell)</div><div class="s-val" id="sumTransport">৳ 0</div></div>
+          <div class="summary-item"><div class="s-label">▤ Visa (Sell)</div><div class="s-val" id="sumVisa">৳ 0</div></div>
+          <div class="summary-item"><div class="s-label">★ Ziyarah (Sell)</div><div class="s-val" id="sumZiyarah">৳ 0</div></div>
+          <div class="summary-item"><div class="s-label">▦ Services (Sell)</div><div class="s-val" id="sumServices">৳ 0</div></div>
+        </div>
+        <div class="grand-total-box">
+          <div class="gt-row"><span>Sub Total</span><span id="grandSubTotal">৳ 0</span></div>
+          <div class="gt-row"><span>VAT (%)</span><input type="number" id="vatPercent" value="15" min="0" max="100" step="0.01" oninput="recalc()"></div>
+          <div class="gt-row"><span>VAT Amount</span><span id="vatAmount" style="color:var(--amber)">৳ 0</span></div>
+          <div class="gt-row"><span>Service Fee</span><input type="number" id="serviceFeeAmount" value="0" min="0" oninput="recalc()"></div>
+          <div class="gt-row"><span>Markup Type</span><select id="markupType" onchange="toggleMarkupInput()"><option value="percent" selected>Percentage (%)</option><option value="fixed">Fixed Amount</option><option value="per_person">Per Person</option><option value="target">Target Selling</option></select></div>
+          <div class="gt-row"><span id="markupValueLabel">Markup (%)</span><input type="number" id="markupPercent" value="10" min="0" oninput="recalc()"></div>
+          <div class="gt-row"><span id="markupFixedLabel">Fixed / Target (৳)</span><input type="number" id="markupValue" value="0" min="0" oninput="recalc()"></div>
+          <div class="gt-row markup-row"><span>Markup Amount</span><span id="markupAmount">৳ 0</span></div>
+          <div class="gt-row"><span>Discount</span><input type="number" id="discountAmount" value="0" min="0" oninput="recalc()"></div>
+          <div class="gt-row final-row"><span>GRAND TOTAL</span><span id="grandTotal">৳ 0</span></div>
+          <div class="gt-row per-person-row"><span>👤 Per Person</span><span id="perPersonTotal">৳ 0</span></div>
+          <div class="gt-row"><span>Advance</span><input type="number" id="advanceAmount" value="0" min="0" oninput="recalc()"></div>
+          <div class="gt-row" style="background:rgba(239,68,68,.06);border-radius:8px;padding:8px 12px;margin-top:6px"><span style="color:var(--red);font-weight:700">💸 Due Amount</span><span id="dueAmount" style="color:var(--red);font-size:18px;font-weight:900">৳ 0</span></div>
+          <div class="gt-row" style="background:rgba(34,197,94,.08);border-radius:8px;padding:8px 12px;margin-top:6px"><span style="color:var(--green);font-weight:700">💰 Profit</span><span id="profitAmount" style="color:var(--green);font-size:18px;font-weight:900">৳ 0</span></div>
+          <div class="gt-row"><span>Profit Margin</span><span id="profitMargin">0%</span></div>
+        </div>
+      </div>
+      <input type="hidden" id="pkgTemplateKey" value="">
+    </div>
+    <div class="modal-foot">
+      <div class="left-actions"><button class="btn btn-danger" onclick="resetBuilder()">🔄 Reset</button></div>
+      <div class="right-actions"><button class="btn btn-secondary" onclick="closeModal('builderModal')">Cancel</button><button class="btn btn-primary" onclick="savePackage()" id="savePackageBtn">💾 Save Package</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DELETE CONFIRM MODAL ============ -->
+<div class="modal-bg" id="deleteConfirmModal">
+  <div class="modal narrow">
+    <div class="modal-head"><h2>⚠️ Delete Confirmation</h2><button class="close-btn" onclick="closeModal('deleteConfirmModal')">✕</button></div>
+    <div class="modal-body">
+      <div style="padding:16px;background:var(--red-bg);border-radius:12px;border-left:4px solid var(--red);margin-bottom:20px"><div style="font-weight:800;color:var(--red);font-size:14px;margin-bottom:6px">⚠️ এই action undo করা যাবে না!</div><div style="font-size:12.5px;color:var(--text-2)" id="deleteConfirmMessage">Are you sure?</div></div>
+      <div class="field"><label>নিশ্চিত করতে <b style="color:var(--red)">confirm</b> লিখুন:</label><input type="text" id="deleteConfirmInput" oninput="checkDeleteConfirm()" autocomplete="off"></div>
+    </div>
+    <div class="modal-foot"><div></div><div class="right-actions"><button class="btn btn-secondary" onclick="closeModal('deleteConfirmModal')">Cancel</button><button class="btn btn-danger" id="deleteConfirmBtn" onclick="executeDelete()" disabled>🗑️ Delete</button></div></div>
+  </div>
+</div>
+
+<!-- ============ FOLLOW-UP MODAL ============ -->
+<div class="modal-bg" id="followSetupModal">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-head"><h2 id="followModalTitle">🔔 Add Follow-up</h2><button class="close-btn" onclick="closeModal('followSetupModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="followEditId">
+      <div class="grid-2">
+        <div class="field"><label>Type</label><select id="followType"><option value="lead">👤 New Lead</option><option value="inquiry">📞 Inquiry</option><option value="quote">📄 Quotation Sent</option><option value="reminder">⏰ Reminder</option><option value="other">📦 Other</option></select></div>
+        <div class="field"><label>Status Pipeline</label><select id="followStatus"><option value="new">🆕 New Lead</option><option value="contacted">📞 Contacted</option><option value="interested">⭐ Interested</option><option value="negotiating">🤝 Negotiating</option><option value="won">✅ Won</option><option value="lost">❌ Lost</option></select></div>
+        <div class="field"><label>Name <span class="req">*</span></label><input type="text" id="followName"><div class="err-msg">Required</div></div>
+        <div class="field"><label>Phone <span class="req">*</span></label><input type="text" id="followPhone"><div class="err-msg">Required</div></div>
+        <div class="field"><label>Email</label><input type="email" id="followEmail"></div>
+        <div class="field"><label>Estimated Value (৳)</label><input type="number" id="followEstValue" min="0" placeholder="e.g., 145000"></div>
+        <div class="field"><label>Follow-up Date <span class="req">*</span></label><input type="date" id="followDate"><div class="err-msg">Required</div></div>
+        <div class="field"><label>Next Follow-up</label><input type="date" id="followNextDate"></div>
+        <div class="field"><label>Time</label><input type="time" id="followTime"></div>
+        <div class="field"><label>Priority</label><select id="followPriority"><option value="low">🟢 Low</option><option value="medium" selected>🟡 Medium</option><option value="high">🔴 High</option></select></div>
+        <div class="field"><label>👤 Assigned To</label><select id="followAssigned"><option value="">-- Unassigned --</option></select></div>
+        <div class="field"><label>📱 Lead Source</label><select id="followSource"><option value="">-- Select --</option></select></div>
+        <div class="field" style="grid-column:1/-1"><label>🏷️ Tags (comma separated)</label><input type="text" id="followTags" placeholder="VIP, Hot, Price-Sensitive"></div>
+        <div class="field" style="grid-column:1/-1"><label>Subject</label><input type="text" id="followSubject" placeholder="Short summary"></div>
+        <div class="field" style="grid-column:1/-1"><label>Notes</label><textarea id="followNotes" style="min-height:80px;resize:vertical" placeholder="Details..."></textarea></div>
+        <div class="field" style="grid-column:1/-1" id="followLostReasonWrap"><label>❌ Lost Reason</label><select id="followLostReason"><option value="">-- Not Lost --</option></select></div>
+      </div>
+    </div>
+    <div class="modal-foot"><div></div><div class="right-actions"><button class="btn btn-secondary" onclick="closeModal('followSetupModal')">Cancel</button><button class="btn btn-primary" onclick="saveFollowSetup()">💾 Save</button></div></div>
+  </div>
+</div>
+
+<!-- ============ CUSTOMER MODAL ============ -->
+<div class="modal-bg" id="customerSetupModal">
+  <div class="modal narrow">
+    <div class="modal-head"><h2 id="customerModalTitle">👤 Add Customer</h2><button class="close-btn" onclick="closeModal('customerSetupModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="custEditId">
+      <div class="grid-2">
+        <div class="field"><label>Name <span class="req">*</span></label><input type="text" id="custName"><div class="err-msg">Required</div></div>
+        <div class="field"><label>Phone <span class="req">*</span></label><input type="text" id="custPhone"><div class="err-msg">Required</div></div>
+        <div class="field"><label>Email</label><input type="email" id="custEmail"></div>
+        <div class="field"><label>Passport</label><input type="text" id="custPassport"></div>
+        <div class="field"><label>Nationality</label><input type="text" id="custNationality" value="Bangladeshi"></div>
+        <div class="field"><label>NID</label><input type="text" id="custNid"></div>
+        <div class="field" style="grid-column:1/-1"><label>Address</label><input type="text" id="custAddress"></div>
+        <div class="field" style="grid-column:1/-1"><label>Notes</label><textarea id="custNotes" style="min-height:70px;resize:vertical"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-foot"><div></div><div class="right-actions"><button class="btn btn-secondary" onclick="closeModal('customerSetupModal')">Cancel</button><button class="btn btn-primary" onclick="saveCustomerSetup()">💾 Save Customer</button></div></div>
+  </div>
+</div>
+
+<!-- ============ VENDOR MODAL ============ -->
+<div class="modal-bg" id="vendorSetupModal">
+  <div class="modal wide">
+    <div class="modal-head"><h2 id="vendorModalTitle">🏢 Add Vendor</h2><button class="close-btn" onclick="closeModal('vendorSetupModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="vendEditId">
+      <div class="section">
+        <div class="section-header"><div class="left"><div class="num">1</div><h3>🏢 Vendor Info</h3></div></div>
+        <div class="section-body">
+          <div class="grid-2">
+            <div class="field"><label>Vendor Name <span class="req">*</span></label><input type="text" id="vendName"><div class="err-msg">Required</div></div>
+            <div class="field"><label>Vendor Type</label><select id="vendType" onchange="onVendorTypeChange()"><option value="hotel">🕌 Hotel</option><option value="transport">▣ Transport</option><option value="visa">▤ Visa</option><option value="ziyarah">★ Ziyarah</option><option value="service">▦ Service</option><option value="other">📦 Other</option></select></div>
+            <div class="field"><label>Contact Person</label><input type="text" id="vendContact"></div>
+            <div class="field"><label>Phone</label><input type="text" id="vendPhone"></div>
+            <div class="field"><label>Email</label><input type="email" id="vendEmail"></div>
+            <div class="field"><label>Address</label><input type="text" id="vendAddress"></div>
+            <div class="field" style="grid-column:1/-1"><label>Notes</label><textarea id="vendNotes" style="min-height:60px;resize:vertical"></textarea></div>
+          </div>
+        </div>
+      </div>
+      <div class="section" id="vendorRatesSection">
+        <div class="section-header"><div class="left"><div class="num">2</div><h3 id="vendorRatesTitle">🕌 Hotel Rates</h3></div><button class="btn btn-primary btn-sm" id="vendorAddBtn" onclick="addVendorItem()">➕ Add Hotel</button></div>
+        <div class="section-body"><div id="vendorItemsList"></div></div>
+      </div>
+    </div>
+    <div class="modal-foot"><div></div><div class="right-actions"><button class="btn btn-secondary" onclick="closeModal('vendorSetupModal')">Cancel</button><button class="btn btn-primary" onclick="saveVendorSetup()">💾 Save Vendor</button></div></div>
+  </div>
+</div>
+
+<!-- ============ TASK DETAIL MODAL ============ -->
+<div class="tk-detail-bg" id="tkDetailBg" onclick="if(event.target===this)closeTaskDetail()">
+  <div class="tk-detail">
+    <div class="tk-detail-head">
+      <div class="tk-detail-head-row"><div class="tk-detail-title" id="tkDetailTitle">Task Title</div><button class="tk-detail-close" onclick="closeTaskDetail()">✕</button></div>
+      <div class="tk-detail-badges"><span class="tk-badge medium" id="tkDetailPriorityBadge">🟡 Medium Priority</span><span class="tk-badge" id="tkDetailCreatedBy" style="background:var(--purple-bg);color:var(--purple)">👤 Created by: Unknown</span></div>
+    </div>
+    <div class="tk-detail-body">
+      <div class="tk-big-progress">
+        <div class="tk-big-progress-ring">
+          <svg viewBox="0 0 72 72"><circle class="ring-bg" cx="36" cy="36" r="32"></circle><circle class="ring-fg" id="tkBigProgressRingFg" cx="36" cy="36" r="32" style="stroke-dasharray:201;stroke-dashoffset:201"></circle></svg>
+        </div>
+        <div class="tk-big-progress-info"><div class="tk-big-progress-pct" id="tkBigProgressPct">0%</div><div class="tk-big-progress-label">Overall Progress</div></div>
+      </div>
+      <div class="tk-section-title">📊 Step-by-Step Progress</div>
+      <div class="tk-detail-steps" id="tkDetailSteps"></div>
+      <div class="tk-info-grid">
+        <div class="tk-info-box blue"><div class="tk-info-label">Assigned To</div><div class="tk-info-value" id="tkDetailAssignedTo">👤 —</div></div>
+        <div class="tk-info-box amber"><div class="tk-info-label">Due Date</div><div class="tk-info-value" id="tkDetailDueDate">📅 —</div></div>
+        <div class="tk-info-box green"><div class="tk-info-label">Category</div><div class="tk-info-value" id="tkDetailCategory">📁 —</div></div>
+        <div class="tk-info-box purple"><div class="tk-info-label">Created By</div><div class="tk-info-value" id="tkDetailCreatedByValue">👤 —</div></div>
+      </div>
+    </div>
+    <div class="tk-detail-foot">
+      <div class="tk-detail-foot-left"><button class="tk-btn btn-secondary" onclick="closeTaskDetail()">Close</button></div>
+      <div class="tk-detail-foot-right">
+        <button class="tk-btn btn-secondary" onclick="reopenTaskForReview()" id="tkReopenBtn" style="display:none; color:var(--amber); border-color:var(--amber);">🔓 Reopen</button>
+        <button class="tk-btn btn-secondary" onclick="editTaskFromDetail()">✏️ Edit</button>
+        <button class="tk-btn btn-secondary" style="color:var(--red)" onclick="deleteTaskFromDetail()">🗑️ Delete</button>
+        <button class="tk-btn btn-primary" onclick="markTaskDone()">✅ Mark Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TASK CREATE/EDIT MODAL ============ -->
+<div class="tk-modal-bg" id="tkCreateModalBg" onclick="if(event.target===this)closeCreateTaskModal()">
+  <div class="tk-modal">
+    <div class="tk-modal-head"><div class="tk-modal-title" id="tkModalTitle">➕ Create New Task</div><button class="tk-modal-close" onclick="closeCreateTaskModal()">✕</button></div>
+    <div class="tk-modal-body">
+      <div class="tk-field"><label class="tk-label">Task Title <span class="req">*</span></label><input class="tk-input" id="tkFldTitle" type="text" placeholder="e.g., Mr. Rahman-এর Umrah Package তৈরি"></div>
+      <div class="tk-field"><label class="tk-label">Description</label><textarea class="tk-textarea" id="tkFldDesc" placeholder="Add details..."></textarea></div>
+      <div class="tk-grid-2">
+        <div class="tk-field"><label class="tk-label">👤 Assigned To</label><select class="tk-input" id="tkFldAssigned"><option value="junayet">Junayet Khan</option><option value="rajon">Rajon</option><option value="both">Both (Team)</option></select></div>
+        <div class="tk-field"><label class="tk-label">📁 Category</label><select class="tk-input" id="tkFldCategory"><option>📦 Package</option><option>👥 Customer</option><option>🕌 Hotel</option><option>✈️ Flight</option><option>▤ Visa</option><option>🏢 Vendor</option><option>💼 Office</option></select></div>
+      </div>
+      <div class="tk-field">
+        <label class="tk-label">🎯 Priority</label>
+        <div class="tk-priority-group"><div class="tk-priority-option high" onclick="setTaskPriority('high', this)">🔴 High</div><div class="tk-priority-option medium act" onclick="setTaskPriority('medium', this)">🟡 Medium</div><div class="tk-priority-option low" onclick="setTaskPriority('low', this)">🟢 Low</div></div>
+      </div>
+      <div class="tk-grid-2">
+        <div class="tk-field"><label class="tk-label">📅 Due Date</label><input class="tk-input" id="tkFldDueDate" type="date"></div>
+        <div class="tk-field"><label class="tk-label">⏰ Due Time</label><input class="tk-input" id="tkFldDueTime" type="time" value="17:00"></div>
+      </div>
+      <div class="tk-field"><label class="tk-label">🏷️ Tags (comma separated)</label><input class="tk-input" id="tkFldTags" type="text" placeholder="urgent, vip, customer"></div>
+      <div class="tk-created-by">👤 <b>Created by:</b> <span id="tkCreatedByPreview">User</span> <span style="opacity:.6">(auto)</span></div>
+    </div>
+    <div class="tk-modal-foot"><button class="tk-btn btn-secondary" onclick="closeCreateTaskModal()">Cancel</button><button class="tk-btn btn-primary" onclick="saveTask()">💾 Save Task</button></div>
+  </div>
+</div>
+
+<!-- ============ EDIT STEPS MODAL ============ -->
+<div class="tk-modal-bg" id="tkEditStepsModal" onclick="if(event.target===this)closeEditStepsModal()">
+  <div class="tk-modal" style="max-width:560px">
+    <div class="tk-modal-head"><div class="tk-modal-title">✏️ Edit Steps</div><button class="tk-modal-close" onclick="closeEditStepsModal()">✕</button></div>
+    <div class="tk-modal-body">
+      <div style="padding:12px 14px;background:linear-gradient(135deg,var(--primary-bg),var(--card));border-left:3px solid var(--primary);border-radius:10px;margin-bottom:16px;font-size:12.5px;line-height:1.6"><b>💡 Steps Customize করো:</b><br>• Step name টাইপ করে <b>Enter</b> দাও<br>• 🔢 handle ধরে <b>drag</b> করে order change<br>• ✕ ক্লিক করে step delete<br>• Maximum 15 steps</div>
+      <div id="tkEditStepsList" class="tk-edit-steps-list"></div>
+      <button class="tk-add-step-btn" onclick="addEditStep()">➕ Add Step</button>
+    </div>
+    <div class="tk-modal-foot" style="justify-content:space-between"><button class="tk-btn btn-secondary" onclick="resetEditStepsDefault()">↻ Reset Default</button><div style="display:flex;gap:8px"><button class="tk-btn btn-secondary" onclick="closeEditStepsModal()">Cancel</button><button class="tk-btn btn-primary" onclick="saveEditSteps()">💾 Save Steps</button></div></div>
+  </div>
+</div>
+
+<!-- ============ INVOICE SETUP MODAL ============ -->
+<div class="modal-bg" id="invoiceSetupModal">
+  <div class="modal wide" style="max-width: 1000px;">
+    <div class="modal-head">
+      <h2>🧾 Create Invoice</h2>
+      <button class="close-btn" onclick="closeModal('invoiceSetupModal')">✕</button>
+    </div>
+    <div class="modal-body" style="max-height: 75vh; overflow-y: auto;">
+      <input type="hidden" id="invId">
+      
+      <div class="grid-2">
+        <div class="field">
+          <label>Customer Name <span class="req">*</span></label>
+          <select id="invCustomerSelect" onchange="onInvoiceCustomerChange(this.value)" style="margin-bottom:8px">
+            <option value="">-- Select Existing Customer --</option>
+          </select>
+          <input type="text" id="invCustomerName" placeholder="Or type manually...">
+        </div>
+        <div class="field">
+          <label>Invoice Date</label>
+          <input type="date" id="invDate" value="${today()}">
+        </div>
+        <div class="field">
+          <label>Service Type</label>
+          <input type="text" id="invServiceType" placeholder="Auto (Flight, Hotel, Transfer...)">
+        </div>
+        <div class="field">
+          <label>Issued By</label>
+          <input type="text" id="invIssuedBy" placeholder="Agent Name">
+        </div>
+        <div class="field">
+          <label>Client Ref (optional)</label>
+          <input type="text" id="invClientRef" placeholder="Booking / PNR / Ref">
+        </div>
+        <div class="field">
+          <label>Paid Amount (৳, optional)</label>
+          <input type="number" id="invPaid" min="0" placeholder="0">
+        </div>
+      </div>
+
+      <div class="section-divider" style="margin: 20px 0 10px; display:flex; justify-content:space-between; align-items:center;">
+        <span>Service Items</span>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <button class="btn btn-secondary btn-xs" onclick="addInvoiceItemRow('flight')">✈️ + Flight</button>
+          <button class="btn btn-secondary btn-xs" onclick="addInvoiceItemRow('hotel')">🏨 + Hotel</button>
+          <button class="btn btn-secondary btn-xs" onclick="addInvoiceItemRow('transfer')">🚐 + Transfer</button>
+          <button class="btn btn-secondary btn-xs" onclick="addInvoiceItemRow('package')">📦 + Package</button>
+          <button class="btn btn-secondary btn-xs" onclick="addInvoiceItemRow('visa')">🛂 + Visa</button>
+          <button class="btn btn-secondary btn-xs" onclick="addInvoiceItemRow('other')">🧩 + Other</button>
+        </div>
+      </div>
+
+      <div id="invoiceItemsList" style="display:flex; flex-direction:column; gap:10px;">
+        <!-- Rows will be added here dynamically -->
+      </div>
+
+    </div>
+    <div class="modal-foot">
+      <div></div>
+      <div class="right-actions">
+        <button class="btn btn-secondary" onclick="closeModal('invoiceSetupModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveAndPrintInvoice()">💾 Save & View Invoice</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="modalsContainer"></div>
+
+<!-- ============ ACCOUNTS CHATBOT (Staff Only) ============ -->
+<div class="chatbot-fab" id="accountsChatbotFab" onclick="toggleAccountsChatbot()" style="display:none"><span class="chatbot-fab-icon">🤖</span><span class="chatbot-fab-pulse"></span></div>
+<div class="chatbot-panel" id="accountsChatbotPanel">
+  <div class="chatbot-header"><div class="chatbot-header-left"><div class="chatbot-avatar"><span>🤖</span><span class="chatbot-online-dot"></span></div><div><div class="chatbot-name">Accounts Assistant</div><div class="chatbot-status">● অনলাইন · Live Financial Data</div></div></div><div style="display:flex;gap:6px;align-items:center"><button class="chatbot-close" onclick="accountsChatbotReset()">🔄</button><button class="chatbot-close" onclick="toggleAccountsChatbot()">✕</button></div></div>
+  <div class="chatbot-messages" id="accountsChatbotMessages"><div class="chatbot-msg bot"><div class="chatbot-bubble">আসসালামু আলাইকুম! 👋<br>আমি আপনার <b>Accounts Assistant</b>।<br><br><b>Try করুন:</b><br><i>"customer due"</i> / <i>"কাস্টমার বাকি"</i><br><i>"vendor due"</i> / <i>"ভেন্ডর বাকি"</i><br><i>"cash in hand"</i> / <i>"হাতে কত"</i></div></div><div class="chatbot-quick-actions"><button class="chatbot-quick-btn" onclick="accChatAsk('customer_due')">📋 Customer Due</button><button class="chatbot-quick-btn" onclick="accChatAsk('vendor_due')">💸 Vendor Due</button><button class="chatbot-quick-btn" onclick="accChatAsk('cash')">💰 Cash</button><button class="chatbot-quick-btn" onclick="accChatAsk('refund')">♻️ Refund</button><button class="chatbot-quick-btn" onclick="accChatAsk('help')">❓ Help</button></div></div>
+  <div class="chatbot-input-wrap"><input type="text" id="accountsChatbotInput" class="chatbot-input" placeholder="যেমন: customer due" onkeydown="if(event.key==='Enter'){accountsChatbotSend();}"><button class="chatbot-send" onclick="accountsChatbotSend()">➤</button></div>
+</div>
+
+<!-- ============ CHATBOT ============ -->
+<div class="chatbot-fab" id="chatbotFab" onclick="toggleChatbot()"><span class="chatbot-fab-icon">🤖</span><span class="chatbot-fab-pulse"></span></div>
+<div class="chatbot-panel" id="chatbotPanel">
+  <div class="chatbot-header"><div class="chatbot-header-left"><div class="chatbot-avatar"><span>🤖</span><span class="chatbot-online-dot"></span></div><div><div class="chatbot-name">Umrah Assistant</div><div class="chatbot-status">● অনলাইন · Live Data</div></div></div><div style="display:flex;gap:6px;align-items:center"><button class="chatbot-close" onclick="chatbotReset()">🔄</button><button class="chatbot-close" onclick="toggleChatbot()">✕</button></div></div>
+  <div class="chatbot-messages" id="chatbotMessages"><div class="chatbot-msg bot"><div class="chatbot-bubble">আসসালামু আলাইকুম! 👋<br>আমি আপনার <b>Booking Assistant</b>।<br><br><b>Try:</b><br><i>"makkah ziyarah 8 jon"</i><br><i>"makkah 3 star hotel list"</i></div></div><div class="chatbot-quick-actions"><button class="chatbot-quick-btn" onclick="chatbotAsk('hotel')">🏨 Hotel Booking</button><button class="chatbot-quick-btn" onclick="chatbotAsk('hotel_list')">📋 Hotel List</button><button class="chatbot-quick-btn" onclick="chatbotAsk('ziyarah')">★ Ziyarah Car</button><button class="chatbot-quick-btn" onclick="chatbotAsk('help')">❓ Help</button></div></div>
+  <div class="chatbot-input-wrap"><input type="text" id="chatbotInput" class="chatbot-input" placeholder="যেমন: makkah ziyarah 8 jon" onkeydown="if(event.key==='Enter'){chatbotSend();}"><button class="chatbot-send" onclick="chatbotSend()">➤</button></div>
+</div>
+
+<!-- ============================================================
+     FIREBASE SDK
+     ============================================================ -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+  import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+  import { getAuth, onAuthStateChanged, signOut, GoogleAuthProvider, linkWithPopup, updateProfile } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+  const firebaseConfig = { apiKey: "AIzaSyAQU6J2Wjb9lHiZEvyKB2q1D5aHKAz9jAo", authDomain: "umrah-package-builder.firebaseapp.com", projectId: "umrah-package-builder", storageBucket: "umrah-package-builder.firebasestorage.app", messagingSenderId: "867591484402", appId: "1:867591484402:web:295974892b167e4743716b" };
+  const app = initializeApp(firebaseConfig);
+  const firestore = getFirestore(app);
+  const auth = getAuth(app);
+  window.firebaseDB = firestore;
+  window.firebaseAuth = auth;
+  window.firebaseFns = { doc, setDoc, getDoc, collection, getDocs, deleteDoc, query, where, onSnapshot };
+  window.firebaseAuthFns = { onAuthStateChanged, signOut, GoogleAuthProvider, linkWithPopup, updateProfile };
+  window.firebaseReady = true;
+  console.log('🔥 Firebase ready');
+
+  const SESSION_TIMEOUT_MS = 10 * 60 * 60 * 1000;
+  const SESSION_KEY = 'umrah_session_start';
+  let sessionTimer = null;
+
+  function startSessionTimer() {
+    let startTime = parseInt(localStorage.getItem(SESSION_KEY) || '0');
+    if (!startTime) { startTime = Date.now(); localStorage.setItem(SESSION_KEY, String(startTime)); }
+    const elapsed = Date.now() - startTime;
+    const remaining = SESSION_TIMEOUT_MS - elapsed;
+    if (remaining <= 0) { localStorage.removeItem(SESSION_KEY); signOut(auth).then(() => { window.location.href = 'login.html'; }); return; }
+    if (sessionTimer) clearTimeout(sessionTimer);
+    sessionTimer = setTimeout(async () => { localStorage.removeItem(SESSION_KEY); try { await signOut(auth); } catch (e) {} window.location.href = 'login.html'; }, remaining);
+  }
+
+  onAuthStateChanged(auth, (user) => {
+    if (!user) { localStorage.removeItem(SESSION_KEY); if (sessionTimer) clearTimeout(sessionTimer); window.location.href = 'login.html'; } 
+    else {
+      window.currentUser = user;
+      document.body.classList.add('auth-ready');
+      startSessionTimer();
+      if (typeof updateUserUI === 'function') setTimeout(updateUserUI, 300);
+      if (typeof initUserRole === 'function') setTimeout(initUserRole, 400);
+    }
+  });
+</script>
+
+<!-- 1. CORE -->
+<script src="assets/js/core/config.js"></script>
+<script src="assets/js/core/helpers.js"></script>
+<script src="assets/js/core/database.js"></script>
+<script src="assets/js/core/state.js"></script>
+<script src="assets/js/core/theme.js"></script>
+<script src="assets/js/core/roles.js"></script>
+
+<!-- 2. MODULES -->
+<script src="assets/js/modules/navigation.js"></script>
+<script src="assets/js/modules/modals.js"></script>
+<script src="assets/js/modules/images.js"></script>
+<script src="assets/js/modules/calculator.js"></script>
+<script src="assets/js/modules/notifications.js"></script>
+
+<!-- 3. MASTERS -->
+<script src="assets/js/masters/hotels.js"></script>
+<script src="assets/js/masters/flights.js"></script>
+<script src="assets/js/masters/transports.js"></script>
+<script src="assets/js/masters/visas.js"></script>
+<script src="assets/js/masters/ziyarah.js"></script>
+<script src="assets/js/masters/services.js"></script>
+<script src="assets/js/masters/customers.js"></script>
+<script src="assets/js/masters/vendors.js"></script>
+
+<!-- 4. BUILDER -->
+<script src="assets/js/builder/builder-core.js"></script>
+<script src="assets/js/builder/builder-hotels.js"></script>
+<script src="assets/js/builder/builder-flight.js"></script>
+<script src="assets/js/builder/builder-transport.js"></script>
+<script src="assets/js/builder/builder-visa.js"></script>
+<script src="assets/js/builder/builder-service.js"></script>
+<script src="assets/js/builder/builder-ziyarah.js"></script>
+<script src="assets/js/builder/builder-itinerary.js"></script>
+<script src="assets/js/builder/builder-content.js"></script>
+<script src="assets/js/builder/builder-templates.js"></script>
+
+<!-- 5. PAGES -->
+<script src="assets/js/pages/dashboard.js"></script>
+<script src="assets/js/pages/analytics.js"></script>
+<script src="assets/js/pages/packages.js"></script>
+<script src="assets/js/pages/followups.js"></script>
+<script src="assets/js/pages/financial.js"></script>
+<script src="assets/js/pages/settings.js"></script>
+
+<!-- 6. BUSINESS PAGES -->
+<script src="assets/js/pages/business/reports.js"></script>
+<script src="assets/js/pages/business/accounts.js"></script>
+<script src="assets/js/pages/business/performance.js"></script>
+<script src="assets/js/pages/business/tasks.js"></script>
+<script src="assets/js/pages/business/documents.js"></script>
+
+<!-- 7. OUTPUT -->
+<script src="assets/js/output/print-quotation.js"></script>
+<script src="assets/js/output/whatsapp.js"></script>
+
+<!-- 8. CHATBOT -->
+<script src="assets/js/chatbot/chatbot-core.js"></script>
+<script src="assets/js/chatbot/chatbot-hotel.js"></script>
+<script src="assets/js/chatbot/chatbot-ziyarah.js"></script>
+<script src="assets/js/chatbot/chatbot-list.js"></script>
+<script src="assets/js/chatbot/chatbot-accounts.js"></script>
+<script src="assets/js/chatbot/chatbot-gemini.js"></script>
+
+<!-- 9. AUTH -->
+<script src="assets/js/core/auth.js"></script>
+
+<!-- 10. APP INIT -->
+<script src="assets/js/app.js"></script>
+
+</body>
+</html>
