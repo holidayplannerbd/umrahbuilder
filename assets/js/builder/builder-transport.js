@@ -107,8 +107,9 @@ function onTransportItemChange(itemId, transportId) {
 function updateTransportItemField(id, field, value) {
   const t = transportItems.find(x => x.id === id);
   if (!t) return;
+  if (field === 'vendorCost') return;
 
-  if (field === 'price' || field === 'sellPrice' || field === 'vendorCost') {
+  if (field === 'price' || field === 'sellPrice') {
     t[field] = Math.max(0, parseFloat(value) || 0);
     if (field === 'sellPrice') t.price = t.sellPrice;
   } else if (field === 'vehicleCount') {
@@ -237,8 +238,7 @@ function renderTransportsList() {
           <div class="grid-3">
             <div class="field">
               <label>🏢 Vendor Cost / ${t.priceType === 'per_vehicle' ? 'Vehicle' : 'Person'}</label>
-              <input class="transport-number-input transport-vendor-input" type="number" value="${t.vendorCost || ''}" placeholder="0"
-                     onchange="updateTransportItemField(${t.id},'vendorCost',this.value)" min="0">
+              <input class="transport-number-input transport-vendor-input" type="number" value="${t.vendorCost || ''}" readonly title="Fixed vendor cost">
             </div>
             <div class="field">
               <label>💵 Sell Price / ${t.priceType === 'per_vehicle' ? 'Vehicle' : 'Person'}</label>
