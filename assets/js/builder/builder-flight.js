@@ -82,6 +82,20 @@ function onFlightItemChange(itemId, flightId) {
   recalc();
 }
 
+function updateFlightSellPrice(itemId, passengerType, value) {
+  const f = flightItems.find(item => item.id === itemId);
+  const field = {
+    adult: 'fareAdult',
+    child: 'fareChild',
+    infant: 'fareInfant'
+  }[passengerType];
+  if (!f || !field) return;
+
+  f[field] = Math.max(0, parseFloat(value) || 0);
+  renderFlightsList();
+  recalc();
+}
+
 /* ==================== CALCULATE TOTALS ==================== */
 function recalcFlightTotals(f) {
   if (!f) return;
@@ -124,6 +138,11 @@ function renderFlightsList() {
 
     const isRound = f.tripType === 'round_trip';
     const profitColor = f.profit >= 0 ? 'var(--green)' : 'var(--red)';
+    const passengerPrices = [
+      { type: 'adult', label: 'Adult', pax: intVal('paxAdult', 0), cost: f.costAdult, sell: f.fareAdult },
+      { type: 'child', label: 'Child', pax: intVal('paxChild', 0), cost: f.costChild, sell: f.fareChild },
+      { type: 'infant', label: 'Infant', pax: intVal('paxInfant', 0), cost: f.costInfant, sell: f.fareInfant }
+    ];
 
     return `<div class="item-card">
       <div class="item-card-head">
@@ -144,6 +163,17 @@ function renderFlightsList() {
           ${isRound 
             ? `Going: <b>${esc(f.from)} → ${esc(f.to)}</b><br>Return: <b>${esc(f.returnFrom || f.to)} → ${esc(f.returnTo || f.from)}</b>`
             : `${esc(f.from)} → ${esc(f.to)}`}
+        </div>
+
+        <div class="flight-pricing-grid">
+          ${passengerPrices.map(p => `
+            <div style="padding:10px 12px;background:var(--bg-2);border-radius:8px;min-width:0">
+              <div style="font-size:11px;font-weight:800;margin-bottom:8px">${p.label} · ${p.pax}</div>
+              <div style="font-size:10px;color:var(--blue);font-weight:700;margin-bottom:4px">Vendor / person: ${fmt(p.cost || 0)}</div>
+              <label style="display:block;font-size:10px;color:var(--primary);font-weight:700;margin-bottom:4px">Sell / person</label>
+              <input class="flight-sell-price" type="number" min="0" step="1" value="${p.sell || ''}" placeholder="0" onchange="updateFlightSellPrice(${f.id},'${p.type}',this.value)">
+            </div>
+          `).join('')}
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px">

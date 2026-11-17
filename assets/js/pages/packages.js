@@ -618,7 +618,7 @@ async function viewPackage(id) {
 
         ${makkahRowsHtml ? sec('🕌 Makkah Hotels', [1], () => makkahRowsHtml) : ''}
         ${madinahRowsHtml ? sec('🕌 Madinah Hotels', [1], () => madinahRowsHtml) : ''}
-        ${(p.ziyarahTransport && p.ziyarahTransport.length) ? sec('★ Ziyarah Transport', p.ziyarahTransport, t => simpleRow('🚐', t.name || 'Ziyarah', CAR_SEATERS[t.car]?.label || t.car, (t.price || 0) * (t.cars || 1))) : ''}
+        ${(p.ziyarahTransport && p.ziyarahTransport.length) ? sec('★ Ziyarah Transport', p.ziyarahTransport, t => simpleRow('🚐', t.name || 'Ziyarah', CAR_SEATERS[t.car]?.label || t.car, (Number(t.sellPrice ?? t.price) || 0) * (t.cars || 1))) : ''}
         ${sec('Flights', p.flights || [], flightRow)}
         ${sec('▣ Transports', p.transports || [], transportRow)}
         ${sec('Visa', p.visas || [], v => simpleRow('▤', v.name, '', ((v.priceAdult || v.price || 0) * (p.paxAdult || 0)) + ((v.priceChild || 0) * (p.paxChild || 0))))}

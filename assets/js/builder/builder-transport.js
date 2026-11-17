@@ -237,17 +237,17 @@ function renderTransportsList() {
           <div class="grid-3">
             <div class="field">
               <label>🏢 Vendor Cost / ${t.priceType === 'per_vehicle' ? 'Vehicle' : 'Person'}</label>
-              <input type="number" value="${t.vendorCost || ''}"
+              <input class="transport-number-input transport-vendor-input" type="number" value="${t.vendorCost || ''}" placeholder="0"
                      onchange="updateTransportItemField(${t.id},'vendorCost',this.value)" min="0">
             </div>
             <div class="field">
               <label>💵 Sell Price / ${t.priceType === 'per_vehicle' ? 'Vehicle' : 'Person'}</label>
-              <input type="number" value="${t.sellPrice || ''}"
+              <input class="transport-number-input transport-sell-input" type="number" value="${t.sellPrice || ''}" placeholder="0"
                      onchange="updateTransportItemField(${t.id},'sellPrice',this.value)" min="0">
             </div>
             <div class="field">
               <label>Vehicle Count</label>
-              <input type="number" value="${t.vehicleCount || 1}"
+              <input class="transport-number-input transport-count-input" type="number" value="${t.vehicleCount || 1}"
                      onchange="updateTransportItemField(${t.id},'vehicleCount',this.value)" min="1" ${t.priceType === 'per_person' ? 'disabled' : ''}>
             </div>
           </div>

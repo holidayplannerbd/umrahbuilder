@@ -52,6 +52,181 @@ function parseContent(content) {
   return sections;
 }
 
+function calculateQuotationPassengerBreakdown(pkg) {
+  const amount = value => {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : 0;
+  };
+  const counts = {
+    adult: Math.max(0, amount(pkg.paxAdult)),
+    child: Math.max(0, amount(pkg.paxChild)),
+    infant: Math.max(0, amount(pkg.paxInfant))
+  };
+  const categoryBaseTotals = { adult: 0, child: 0, infant: 0 };
+  const categoryFinalTotals = { adult: 0, child: 0, infant: 0 };
+  const componentRows = [];
+  const adjustmentRows = [];
+
+  const totalOf = totals => totals.adult + totals.child + totals.infant;
+  const weightedTotal = rates =>
+    rates.adult * counts.adult + rates.child * counts.child + rates.infant * counts.infant;
+
+  const allocateShared = total => ({ adult: total, child: 0, infant: 0 });
+
+  const addRow = (collection, label, totals, type = 'component') => {
+    const categoryTotals = {
+      adult: amount(totals.adult),
+      child: amount(totals.child),
+      infant: amount(totals.infant)
+    };
+    const overall = totalOf(categoryTotals);
+    if (Math.abs(overall) < 0.005) return;
+
+    const row = {
+      label,
+      type,
+      adult: counts.adult ? categoryTotals.adult / counts.adult : 0,
+      child: counts.child ? categoryTotals.child / counts.child : 0,
+      infant: counts.infant ? categoryTotals.infant / counts.infant : 0,
+      overall
+    };
+    collection.push(row);
+    categoryFinalTotals.adult += categoryTotals.adult;
+    categoryFinalTotals.child += categoryTotals.child;
+    categoryFinalTotals.infant += categoryTotals.infant;
+    if (collection === componentRows) {
+      categoryBaseTotals.adult += categoryTotals.adult;
+      categoryBaseTotals.child += categoryTotals.child;
+      categoryBaseTotals.infant += categoryTotals.infant;
+    }
+  };
+
+  const matchTotal = (totals, target) => {
+    const current = weightedTotal({
+      adult: counts.adult ? totals.adult / counts.adult : 0,
+      child: counts.child ? totals.child / counts.child : 0,
+      infant: counts.infant ? totals.infant / counts.infant : 0
+    });
+    if (target <= 0) return totals;
+    if (current <= 0) return allocateShared(target);
+    const factor = target / current;
+    return {
+      adult: totals.adult * factor,
+      child: totals.child * factor,
+      infant: totals.infant * factor
+    };
+  };
+
+  const flightRates = (pkg.flights || []).reduce((result, flight) => {
+    result.adult += amount(flight.fareAdult ?? flight.fare ?? flight.sellPrice);
+    result.child += amount(flight.fareChild);
+    result.infant += amount(flight.fareInfant);
+    return result;
+  }, { adult: 0, child: 0, infant: 0 });
+  let flightTotals = {
+    adult: flightRates.adult * counts.adult,
+    child: flightRates.child * counts.child,
+    infant: flightRates.infant * counts.infant
+  };
+  flightTotals = matchTotal(flightTotals, amount(pkg.flightCost));
+  addRow(componentRows, 'Flight', flightTotals);
+
+  const visaRates = (pkg.visas || []).reduce((result, visa) => {
+    const adultFee = amount(visa.priceAdult || visa.price);
+    result.adult += adultFee;
+    result.child += amount(visa.priceChild || adultFee);
+    result.infant += amount(visa.priceInfant);
+    return result;
+  }, { adult: 0, child: 0, infant: 0 });
+  let visaTotals = {
+    adult: visaRates.adult * counts.adult,
+    child: visaRates.child * counts.child,
+    infant: visaRates.infant * counts.infant
+  };
+  visaTotals = matchTotal(visaTotals, amount(pkg.visaCost));
+  addRow(componentRows, 'Visa', visaTotals);
+
+  addRow(componentRows, 'Hotel Accommodation', allocateShared(amount(pkg.hotelCost)));
+
+  addRow(componentRows, 'Transport / Transfer', allocateShared(amount(pkg.transportCost)));
+
+  addRow(componentRows, 'Ziyarah Transport', allocateShared(amount(pkg.ziyarahTransportCost)));
+  addRow(componentRows, 'Other Services', allocateShared(amount(pkg.serviceCost)));
+
+  const calculatedSubtotal = totalOf(categoryBaseTotals);
+  const subtotal = amount(pkg.subTotal) || calculatedSubtotal;
+  const otherCharges = subtotal - calculatedSubtotal;
+  addRow(componentRows, 'Other Package Charges', allocateShared(otherCharges));
+
+  const allocateAdjustment = total => allocateShared(total);
+
+  const vat = amount(pkg.vatAmount);
+  const serviceFee = amount(pkg.serviceFeeAmount);
+  const markup = amount(pkg.markupAmount);
+  const discount = Math.min(
+    Math.max(0, amount(pkg.discountAmount)),
+    Math.max(0, subtotal + vat + serviceFee + markup)
+  );
+  [
+    { label: `VAT (${amount(pkg.vatPercent)}%)`, amount: vat, type: 'vat' },
+    { label: 'Service Fee', amount: serviceFee, type: 'fee' },
+    { label: 'Markup', amount: markup, type: 'markup' },
+    { label: 'Discount', amount: -discount, type: 'discount' }
+  ].forEach(item => {
+    if (item.amount) addRow(adjustmentRows, item.label, allocateAdjustment(item.amount), item.type);
+  });
+
+  const calculatedGrandTotal = totalOf(categoryFinalTotals);
+  const grandTotal = pkg.grandTotal == null ? calculatedGrandTotal : Math.max(0, amount(pkg.grandTotal));
+  const roundingAdjustment = grandTotal - calculatedGrandTotal;
+  if (Math.abs(roundingAdjustment) >= 0.005) {
+    addRow(adjustmentRows, 'Rounding Adjustment', allocateAdjustment(roundingAdjustment), 'rounding');
+  }
+
+  const categoryTotals = {
+    adult: categoryFinalTotals.adult,
+    child: categoryFinalTotals.child,
+    infant: categoryFinalTotals.infant
+  };
+  const countedCategories = ['adult', 'child', 'infant'].filter(category => counts[category] > 0);
+  const displayedCategoryTotals = { ...categoryTotals };
+  let roundingUnits = Math.round(grandTotal) - countedCategories.reduce(
+    (sum, category) => sum + Math.floor(categoryTotals[category]),
+    0
+  );
+  const roundingOrder = countedCategories.slice().sort(
+    (left, right) =>
+      (categoryTotals[right] - Math.floor(categoryTotals[right])) -
+      (categoryTotals[left] - Math.floor(categoryTotals[left]))
+  );
+  countedCategories.forEach(category => {
+    displayedCategoryTotals[category] = Math.floor(categoryTotals[category]);
+  });
+  for (let index = 0; roundingUnits > 0 && roundingOrder.length; index += 1, roundingUnits -= 1) {
+    displayedCategoryTotals[roundingOrder[index % roundingOrder.length]] += 1;
+  }
+  for (let index = roundingOrder.length - 1; roundingUnits < 0 && roundingOrder.length; index -= 1, roundingUnits += 1) {
+    const category = roundingOrder[(index + roundingOrder.length) % roundingOrder.length];
+    if (displayedCategoryTotals[category] > 0) displayedCategoryTotals[category] -= 1;
+  }
+  const categoryRates = {
+    adult: counts.adult ? displayedCategoryTotals.adult / counts.adult : 0,
+    child: counts.child ? displayedCategoryTotals.child / counts.child : 0,
+    infant: counts.infant ? displayedCategoryTotals.infant / counts.infant : 0
+  };
+
+  return {
+    counts,
+    componentRows,
+    adjustmentRows,
+    categoryBaseTotals,
+    categoryTotals: displayedCategoryTotals,
+    categoryRates,
+    subtotal,
+    grandTotal
+  };
+}
+
 /* ==================== PRINT QUOTATION ==================== */
 async function printQuotation(id) {
   const p = STORE.packages.find(x => x.id === id);
@@ -165,45 +340,78 @@ async function printQuotation(id) {
   const docTitle = `${p.name || 'Umrah Package'} — ${p.nights || 0}N/${p.days || 0}D`;
 
   /* Cost breakdown */
-  const paxTotalForBreakdown = (p.paxAdult || 0) + (p.paxChild || 0);
-  const breakdownPax = Math.max(1, paxTotalForBreakdown);
+  const passengerBreakdown = calculateQuotationPassengerBreakdown(p);
+  const formatBreakdownRate = value => Number(value || 0).toLocaleString('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  });
+  const formatBreakdownCurrencyRate = value => value < 0
+    ? `- ৳ ${formatBreakdownRate(Math.abs(value))}`
+    : `৳ ${formatBreakdownRate(value)}`;
+  const formatBreakdownAmount = value => value < 0
+    ? `- ${fmt(Math.abs(value))}`
+    : fmt(value);
+  const renderBreakdownRows = rows => rows.map(row => {
+    const color = row.type === 'discount' ? '#dc2626' : row.type === 'markup' || row.type === 'vat' ? '#c2410c' : '#27272a';
+    const cell = (value, count) => count ? formatBreakdownCurrencyRate(value) : '—';
+    return `<tr>
+      <td style="padding:7px 5px;color:#52525b;font-weight:600">${row.label}</td>
+      <td style="padding:7px 5px;text-align:right;color:${color};font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap">${cell(row.adult, passengerBreakdown.counts.adult)}</td>
+      <td style="padding:7px 5px;text-align:right;color:${color};font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap">${cell(row.child, passengerBreakdown.counts.child)}</td>
+      <td style="padding:7px 5px;text-align:right;color:${color};font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap">${cell(row.infant, passengerBreakdown.counts.infant)}</td>
+      <td style="padding:7px 5px;text-align:right;color:${color};font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap">${formatBreakdownAmount(row.overall)}</td>
+    </tr>`;
+  }).join('');
+  const breakdownPaxTypes = [
+    { key: 'adult', label: 'Adult' },
+    { key: 'child', label: 'Child' },
+    { key: 'infant', label: 'Infant' }
+  ];
 
-  const costRows = [
-    { icon: '🕌', label: 'Hotel Accommodation', value: p.hotelCost || 0 },
-    { icon: '▤', label: 'Visa', value: p.visaCost || 0 },
-    { icon: '✈', label: 'Flight (Round Trip)', value: p.flightCost || 0 },
-    { icon: '★', label: 'Ziyarah Transport', value: p.ziyarahTransportCost || 0 },
-    { icon: '▣', label: 'Transport / Transfer', value: p.transportCost || 0 },
-    { icon: '▦', label: 'Other Services', value: p.serviceCost || 0 }
-  ].filter(r => r.value > 0);
-
-  const subtotalPerPerson = paxTotalForBreakdown > 0 ? (p.subTotal || 0) / paxTotalForBreakdown : 0;
-  const vatPerPerson = paxTotalForBreakdown > 0 ? (p.vatAmount || 0) / paxTotalForBreakdown : 0;
-  const serviceFeePerPerson = paxTotalForBreakdown > 0 ? (p.serviceFeeAmount || 0) / paxTotalForBreakdown : 0;
-  const markupPerPerson = paxTotalForBreakdown > 0 ? (p.markupAmount || 0) / paxTotalForBreakdown : 0;
-  const discountPerPerson = paxTotalForBreakdown > 0 ? (p.discountAmount || 0) / paxTotalForBreakdown : 0;
-  const grandPerPerson = p.perPerson || 0;
-
-  const costBreakdownHtml = costRows.length ? `
-    <div class="cost-breakdown-section pdf-breakable" style="margin-top:20px;padding:16px 18px;background:linear-gradient(135deg,#fff7ed,#fafafa);border:2px solid #fed7aa;border-radius:12px">
-      <div style="font-size:13px;font-weight:900;color:#18181b;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid #f97316;text-transform:uppercase;letter-spacing:1px;text-align:center">📊 Cost Breakdown (Per Person)</div>
-      <table style="width:100%;border-collapse:collapse;font-size:11.5px">
-        <tbody>
-          ${costRows.map(r => `<tr><td style="padding:6px 0;color:#52525b;font-weight:600"><span style="margin-right:8px">${r.icon}</span>${r.label}</td><td style="padding:6px 0;text-align:right;color:#18181b;font-weight:700;white-space:nowrap">৳ ${Math.round(r.value / breakdownPax).toLocaleString()}</td></tr>`).join('')}
-          <tr style="border-top:1px dashed #fed7aa">
-            <td style="padding:8px 0 4px;color:#52525b;font-weight:700">Subtotal Per Person</td>
-            <td style="padding:8px 0 4px;text-align:right;color:#18181b;font-weight:800">৳ ${Math.round(subtotalPerPerson).toLocaleString()}</td>
+  const costBreakdownHtml = passengerBreakdown.componentRows.length || passengerBreakdown.adjustmentRows.length ? `
+    <div class="cost-breakdown-section pdf-breakable" style="margin-top:20px;padding:16px 18px;background:#fffaf5;border:2px solid #fed7aa;border-radius:12px">
+      <div style="font-size:15px;font-weight:900;color:#18181b;margin-bottom:5px;text-align:center">📊 Cost Breakdown (Per Person)</div>
+      <div style="font-size:10px;font-weight:600;color:#71717a;margin-bottom:12px;text-align:center">Per-person rate by passenger type and package total</div>
+      <table style="width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed">
+        <colgroup><col style="width:27%"><col style="width:18%"><col style="width:18%"><col style="width:18%"><col style="width:19%"></colgroup>
+        <thead>
+          <tr style="background:#fff1e6;border-bottom:2px solid #fdba74">
+            <th style="padding:8px 5px;text-align:left;color:#52525b;font-weight:800">Cost Head</th>
+            ${breakdownPaxTypes.map(type => `<th style="padding:8px 5px;text-align:right;color:#52525b;font-weight:800">${type.label}<br><span style="font-size:9px;font-weight:600">(${passengerBreakdown.counts[type.key]}) · / person</span></th>`).join('')}
+            <th style="padding:8px 5px;text-align:right;color:#52525b;font-weight:800">Overall</th>
           </tr>
-          ${vatPerPerson > 0 ? `<tr><td style="padding:4px 0;color:#52525b;font-weight:600"><span style="margin-right:8px">💵</span>VAT (${p.vatPercent || 0}%)</td><td style="padding:4px 0;text-align:right;color:#f59e0b;font-weight:700">৳ ${Math.round(vatPerPerson).toLocaleString()}</td></tr>` : ''}
-          ${serviceFeePerPerson > 0 ? `<tr><td style="padding:4px 0;color:#52525b;font-weight:600"><span style="margin-right:8px">▦</span>Service Fee</td><td style="padding:4px 0;text-align:right;color:#18181b;font-weight:700">৳ ${Math.round(serviceFeePerPerson).toLocaleString()}</td></tr>` : ''}
-          ${markupPerPerson > 0 ? `<tr><td style="padding:4px 0;color:#52525b;font-weight:600"><span style="margin-right:8px">💰</span>Markup</td><td style="padding:4px 0;text-align:right;color:#f59e0b;font-weight:700">৳ ${Math.round(markupPerPerson).toLocaleString()}</td></tr>` : ''}
-          ${discountPerPerson > 0 ? `<tr><td style="padding:4px 0;color:#52525b;font-weight:600"><span style="margin-right:8px">🎁</span>Discount</td><td style="padding:4px 0;text-align:right;color:#ef4444;font-weight:700">- ৳ ${Math.round(discountPerPerson).toLocaleString()}</td></tr>` : ''}
-          <tr style="border-top:2px solid #f97316">
-            <td style="padding:12px 0 4px;color:#18181b;font-weight:900;font-size:14px;text-transform:uppercase;letter-spacing:.5px">👤 Total Per Person</td>
-            <td style="padding:12px 0 4px;text-align:right;color:#ea580c;font-weight:900;font-size:18px;white-space:nowrap">৳ ${grandPerPerson.toLocaleString()}</td>
+        </thead>
+        <tbody>
+          ${renderBreakdownRows(passengerBreakdown.componentRows)}
+          <tr style="border-top:1px dashed #fdba74;background:#fffdfb">
+            <td style="padding:8px 5px;color:#27272a;font-weight:800">Subtotal</td>
+            ${breakdownPaxTypes.map(type => {
+              const count = passengerBreakdown.counts[type.key];
+              const amount = passengerBreakdown.categoryBaseTotals[type.key];
+              return `<td style="padding:8px 5px;text-align:right;color:#27272a;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap">${count ? `৳ ${formatBreakdownRate(amount / count)}` : '—'}</td>`;
+            }).join('')}
+            <td style="padding:8px 5px;text-align:right;color:#27272a;font-weight:900;white-space:nowrap">${fmt(passengerBreakdown.subtotal)}</td>
+          </tr>
+          ${renderBreakdownRows(passengerBreakdown.adjustmentRows)}
+          <tr style="border-top:2px solid #f97316;background:#fff1e6">
+            <td style="padding:10px 5px;color:#18181b;font-weight:900;font-size:11px">TOTAL / PERSON</td>
+            ${breakdownPaxTypes.map(type => {
+              const rate = passengerBreakdown.categoryRates[type.key];
+              return `<td style="padding:10px 5px;text-align:right;color:#c2410c;font-weight:900;font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap">${passengerBreakdown.counts[type.key] ? `৳ ${formatBreakdownRate(rate)}` : '—'}</td>`;
+            }).join('')}
+            <td style="padding:10px 5px;text-align:right;color:#c2410c;font-weight:900;font-size:12px;white-space:nowrap">${fmt(passengerBreakdown.grandTotal)}</td>
           </tr>
         </tbody>
       </table>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px">
+        ${breakdownPaxTypes.map(type => {
+          const count = passengerBreakdown.counts[type.key];
+          return `<div style="padding:9px 10px;background:#fff;border:1px solid #fed7aa;border-radius:8px;text-align:center">
+            <div style="font-size:10px;color:#71717a;font-weight:700">${type.label} Total (${count})</div>
+            <div style="margin-top:3px;font-size:14px;color:#18181b;font-weight:900;font-variant-numeric:tabular-nums">${fmt(passengerBreakdown.categoryTotals[type.key])}</div>
+          </div>`;
+        }).join('')}
+      </div>
     </div>` : '';
 
   const includesExcludesHtml = (inclusions.length || exclusions.length) ? `
@@ -335,9 +543,11 @@ async function printQuotation(id) {
                 <span>${p.advanceAmount ? 'DUE AMOUNT' : 'GRAND TOTAL'}</span>
                 <span style="color:#ea580c">${fmt(p.dueAmount || p.grandTotal)}</span>
               </div>
-              <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px;font-weight:900;color:#16a34a;border-top:2px solid #f97316">
-                <span>👤 Per Person</span>
-                <span>${fmt(p.perPerson)}</span>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding-top:10px;border-top:2px solid #f97316">
+                ${breakdownPaxTypes.map(type => `<div style="text-align:center">
+                  <div style="font-size:10px;font-weight:700;color:#71717a">${type.label} / Person</div>
+                  <div style="margin-top:3px;font-size:13px;font-weight:900;color:#16a34a;font-variant-numeric:tabular-nums">${passengerBreakdown.counts[type.key] ? `৳ ${formatBreakdownRate(passengerBreakdown.categoryRates[type.key])}` : '—'}</div>
+                </div>`).join('')}
               </div>
               ${p.validUntil ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid #e5e7eb;font-size:11px;color:#71717a;text-align:center;font-weight:600">⏳ Valid until: <strong style="color:#18181b">${p.validUntil}</strong></div>` : ''}
             </div>

@@ -191,7 +191,7 @@ async function editPackage(id) {
   cancellationPolicyItems = dedupeTextItems(JSON.parse(JSON.stringify(p.cancellationPolicyItems || [])));
 
   ziyarahTransportItems = (p.ziyarahTransport || []).map((it, idx) => ({
-    ...it, id: idx + 1, ziyarahId: it.ziyarahId, city: it.city, name: it.name, pax: it.pax || 2, car: it.car || 'hiace', cars: it.cars || 1, price: it.price || 0, auto: it.auto !== undefined ? it.auto : true
+    ...it, id: idx + 1, ziyarahId: it.ziyarahId, city: it.city, name: it.name, pax: it.pax || 2, car: it.car || 'hiace', cars: it.cars || 1, price: it.price || 0, sellPrice: it.sellPrice ?? it.price ?? 0, auto: it.auto !== undefined ? it.auto : true
   }));
   ensurePaymentItemIds(ziyarahTransportItems, 'ziyarah');
   ztC = Math.max(0, ...ziyarahTransportItems.map(x => x.id || 0));

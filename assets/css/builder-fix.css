@@ -448,9 +448,88 @@
 /* ============================================================
    ZIYARAH TRANSPORT ITEM — Force proper grid
    ============================================================ */
+#builderModal .flight-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+#builderModal .flight-pricing-grid .flight-sell-price {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 9px 11px;
+  border: 1.5px solid var(--primary-light);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--primary-dark);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s, background .15s;
+}
+
+#builderModal .flight-pricing-grid .flight-sell-price:focus {
+  border-color: var(--primary);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, .12);
+}
+
+#builderModal .flight-pricing-grid .flight-sell-price::placeholder {
+  color: var(--text-3);
+  font-weight: 600;
+  opacity: .7;
+}
+
+#builderModal .field input.transport-number-input {
+  min-width: 0 !important;
+  padding: 10px 12px !important;
+  border: 1.5px solid var(--border) !important;
+  border-radius: 9px !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  transition: border-color .15s, box-shadow .15s, background .15s;
+}
+
+#builderModal .field input.transport-vendor-input {
+  color: var(--blue) !important;
+  background: var(--blue-bg) !important;
+  border-color: rgba(59, 130, 246, .28) !important;
+}
+
+#builderModal .field input.transport-sell-input {
+  color: var(--primary-dark) !important;
+  background: var(--primary-bg) !important;
+  border-color: rgba(249, 115, 22, .35) !important;
+}
+
+#builderModal .field input.transport-count-input {
+  color: var(--text) !important;
+  background: var(--card) !important;
+}
+
+#builderModal .field input.transport-number-input:focus {
+  border-color: var(--primary) !important;
+  background: var(--card) !important;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, .12) !important;
+}
+
+#builderModal .field input.transport-count-input:disabled {
+  color: var(--text-3) !important;
+  background: var(--bg-2) !important;
+  cursor: not-allowed;
+  opacity: .7;
+}
+
 #builderModal .zy-transport-item {
   display: grid !important;
-  grid-template-columns: 1.2fr 2fr 0.8fr 1fr 40px !important;
+  grid-template-columns: 1.15fr 1.4fr 1fr .65fr .85fr .85fr 1.25fr 40px !important;
   gap: 10px !important;
   align-items: end !important;
   padding: 14px !important;
@@ -831,6 +910,9 @@ body.dark #builderModal .summary-section {
 @media (max-width: 768px) {
   #builderModal .summary-grid {
     grid-template-columns: 1fr !important;
+  }
+  #builderModal .flight-pricing-grid {
+    grid-template-columns: 1fr;
   }
   #builderModal .zy-transport-item {
     grid-template-columns: 1fr !important;

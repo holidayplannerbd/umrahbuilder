@@ -19,6 +19,7 @@ function addZiyarahTransportItem() {
     car: 'hiace',
     cars: 1,
     price: 0,
+    sellPrice: 0,
     auto: true
   });
   renderZiyarahTransportList();
@@ -47,6 +48,7 @@ function onZiyarahSelectChange(idx, ziyarahId) {
     item.car = 'hiace';
     item.cars = 1;
     item.price = 0;
+    item.sellPrice = 0;
   } else {
     const z = STORE.ziyarah.find(x => x.id === parseInt(ziyarahId));
     if (!z) return;
@@ -62,10 +64,13 @@ function onZiyarahSelectChange(idx, ziyarahId) {
     item.pax = pax;
 
     const best = autoSelectBestCar(pax, z.carRates || {});
+    item.price = 0;
+    item.sellPrice = 0;
     if (best) {
       item.car = best.car;
       item.cars = best.cars;
       item.price = best.rate;
+      item.sellPrice = best.rate;
       item.auto = true;
     }
   }
@@ -92,7 +97,13 @@ function renderZiyarahTransportList() {
     const z = item.ziyarahId ? STORE.ziyarah.find(x => x.id === item.ziyarahId) : null;
     const carOptions = getZiyarahCarOptions();
     const rates = z?.carRates || {};
-    const total = (Number(item.price) || 0) * (Number(item.cars) || 1);
+    const vendorPrice = Number(item.price) || 0;
+    const sellPrice = Number(item.sellPrice ?? item.price) || 0;
+    const cars = Number(item.cars) || 1;
+    const vendorTotal = vendorPrice * cars;
+    const total = sellPrice * cars;
+    const profit = total - vendorTotal;
+    const profitColor = profit >= 0 ? 'var(--green)' : 'var(--red)';
 
     const autoLabel = item.auto
       ? '<span style="font-size:9.5px;color:var(--green);font-weight:800">AUTO</span>'
@@ -135,8 +146,16 @@ function renderZiyarahTransportList() {
           <input type="number" min="${minCars}" value="${item.cars}" onchange="updateZiyarahCars(${idx}, this.value)">
         </div>
         <div class="ztf">
-          <label>Total</label>
-          <div class="zy-zt-total">${fmt(total)}</div>
+          <label>Vendor Price / Car</label>
+          <div class="zy-zt-total">${fmt(vendorPrice)}</div>
+        </div>
+        <div class="ztf">
+          <label>Sell Price / Car</label>
+          <input type="number" min="0" step="1" value="${sellPrice || ''}" onchange="updateZiyarahSellPrice(${idx}, this.value)">
+        </div>
+        <div class="ztf">
+          <label>Sell Total · Profit</label>
+          <div class="zy-zt-total">${fmt(total)} · <span style="color:${profitColor}">${profit >= 0 ? '+' : ''}${fmt(profit)}</span></div>
         </div>
         <button class="zy-remove-btn" onclick="removeZiyarahTransportItem(${idx})" title="Remove">✕</button>
       </div>
@@ -157,9 +176,19 @@ function updateZiyarahCar(idx, carId) {
 
   item.car = carId;
   item.price = Number(rates[carId] || 0);
+  item.sellPrice = item.price;
   if (opt) item.cars = Math.ceil(item.pax / opt.seats);
   item.auto = false;
 
+  renderZiyarahTransportList();
+  recalc();
+}
+
+function updateZiyarahSellPrice(idx, value) {
+  const item = ziyarahTransportItems[idx];
+  if (!item) return;
+
+  item.sellPrice = Math.max(0, parseFloat(value) || 0);
   renderZiyarahTransportList();
   recalc();
 }
@@ -181,6 +210,12 @@ function updateZiyarahCars(idx, val) {
 
 /* ==================== GET TOTAL COST ==================== */
 function getZiyarahTransportCost() {
+  return ziyarahTransportItems.reduce((sum, t) =>
+    sum + ((Number(t.sellPrice ?? t.price) || 0) * (Number(t.cars) || 1)), 0
+  );
+}
+
+function getZiyarahVendorCost() {
   return ziyarahTransportItems.reduce((sum, t) =>
     sum + ((Number(t.price) || 0) * (Number(t.cars) || 1)), 0
   );

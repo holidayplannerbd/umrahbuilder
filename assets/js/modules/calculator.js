@@ -153,7 +153,7 @@ function calculatePackageTotals() {
 
   /* ==================== Vendor costs ==================== */
   const vendorServiceCost = serviceCost;
-  const vendorZiyarahCost = ziyarahTransportCost;
+  const vendorZiyarahCost = getZiyarahVendorCost();
 
   const totalVendorCost = vendorHotelCost + vendorFlightCost + vendorTransportCost +
                           vendorServiceCost + vendorZiyarahCost + vendorVisaCost;
