@@ -216,8 +216,9 @@ async function viewPackage(id) {
     const hotelVendorTotal = rooms.reduce((s, r) => {
       const vRate = r.vendorRate !== undefined ? r.vendorRate : getHotelVendorRate(h.hotelId || h.id, safeCityName, r.type);
       const paxInRoom = (r.adults || 0) + (r.children || 0);
-      const mealPerNight = (r.mealRate || 0) * paxInRoom;
-      return s + ((vRate + mealPerNight) * (r.nights || 0));
+      const vendorMealRate = getHotelVendorMealRate(safeCityName.toLowerCase(), h, r.meal);
+      const vendorMealPerNight = vendorMealRate * paxInRoom;
+      return s + ((vRate + vendorMealPerNight) * (r.nights || 0));
     }, 0);
 
     const hotelSellTotal = rooms.reduce((s, r) => {
@@ -235,9 +236,11 @@ async function viewPackage(id) {
       
       // ⭐ ডাইনামিক ভ্যালু
       const vRate = r.vendorRate !== undefined ? r.vendorRate : getHotelVendorRate(h.hotelId || h.id, safeCityName, r.type);
+      const vendorMealRate = getHotelVendorMealRate(safeCityName.toLowerCase(), h, r.meal);
+      const vendorMealPerNight = vendorMealRate * paxInRoom;
       const sellRate = r.rate || 0;
       
-      const vTotal = (vRate + mealPerNight) * (r.nights || 0);
+      const vTotal = (vRate + vendorMealPerNight) * (r.nights || 0);
       const sTotal = (sellRate + mealPerNight) * (r.nights || 0);
       const profit = sTotal - vTotal;
 
@@ -293,10 +296,19 @@ async function viewPackage(id) {
   /* ⭐ Flight row — Net vs Sell + Profit */
   const flightRow = (f) => {
     const isRound = f.tripType === 'round_trip';
-    const netPerAdult = (f.netPrice || 0) + (isRound ? (f.netPrice || 0) : 0);
-    const sellPerAdult = (f.sellPrice || 0) + (isRound ? (f.sellPrice || 0) : 0);
-    const netTotal = netPerAdult * (p.paxAdult || 0);
-    const sellTotal = sellPerAdult * (p.paxAdult || 0);
+    const paxAdult = Number(p.paxAdult || 0);
+    const paxChild = Number(p.paxChild || 0);
+    const paxInfant = Number(p.paxInfant || 0);
+    const sellTotal = Number(f.totalSell || (
+      Number(f.fareAdult || f.fare || 0) * paxAdult +
+      Number(f.fareChild || 0) * paxChild +
+      Number(f.fareInfant || 0) * paxInfant
+    ));
+    const netTotal = Number(f.totalNet || (
+      Number(f.costAdult || f.netPrice || f.fareAdult || f.fare || 0) * paxAdult +
+      Number(f.costChild || f.fareChild || 0) * paxChild +
+      Number(f.costInfant || f.fareInfant || 0) * paxInfant
+    ));
     const profit = sellTotal - netTotal;
 
     return `<div style="padding:12px 14px;background:var(--bg-2);border-radius:10px;margin-bottom:6px">
@@ -525,7 +537,7 @@ async function viewPackage(id) {
               <div style="font-size:12.5px;font-weight:800;color:var(--blue);display:flex;align-items:center;gap:6px">
                 ✈ Flight — Net vs Sell
               </div>
-              <div style="font-size:11px;color:var(--text-3);margin-top:2px">Vendor payment nai — direct profit</div>
+              <div style="font-size:11px;color:var(--text-3);margin-top:2px">Flight cost is included in package profit; vendor payment is not tracked here.</div>
             </div>
             <div style="display:flex;gap:16px;flex-wrap:wrap">
               <div style="text-align:center">

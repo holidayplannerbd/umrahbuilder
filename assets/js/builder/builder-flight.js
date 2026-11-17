@@ -97,9 +97,9 @@ function recalcFlightTotals(f) {
     ((f.fareInfant || 0) * paxInfant);
     
   f.totalNet = 
-    ((f.costAdult || 0) * paxAdult) + 
-    ((f.costChild || 0) * paxChild) + 
-    ((f.costInfant || 0) * paxInfant);
+    ((f.costAdult || f.fareAdult || 0) * paxAdult) +
+    ((f.costChild || f.fareChild || 0) * paxChild) +
+    ((f.costInfant || f.fareInfant || 0) * paxInfant);
     
   f.profit = f.totalSell - f.totalNet;
 }

@@ -425,12 +425,7 @@ function getHotelVendorRateHint(cityType, hotel, room) {
 
 /* ==================== MEAL RATES ==================== */
 function getHotelDefaultMealRate(cityType, hotelItem, meal) {
-  if (!hotelItem) return 0;
-  if (meal === 'room_only' || !meal) return 0;
-  const field = { breakfast: 'breakfast', half_board: 'halfBoard', full_board: 'fullBoard' }[meal];
-  if (!field) return 0;
-  const master = (cityType === 'makkah' ? STORE.makkahHotels : STORE.madinahHotels).find(h => String(h.id) === String(hotelItem.hotelId));
-  return Number(master?.[field] || 0);
+  return getHotelVendorMealRate(cityType, hotelItem, meal);
 }
 
 function getHotelVendorMealRate(cityType, hotelItem, meal) {
@@ -440,12 +435,16 @@ function getHotelVendorMealRate(cityType, hotelItem, meal) {
   if (!field) return 0;
   const master = (cityType === 'makkah' ? STORE.makkahHotels : STORE.madinahHotels).find(h => String(h.id) === String(hotelItem.hotelId));
   if (!master) return 0;
+  const masterMealRate = parseHotelRate(master[field]);
+  if (masterMealRate > 0) return masterMealRate;
   const vId = hotelItem.vendorId || master.vendorId;
-  if (!vId) return 0;
-  const vendor = STORE.vendors.find(v => String(v.id) === String(vId));
-  if (!vendor) return 0;
-  const vh = hotelItem.vendorHotelItemId ? getVendorHotelItems(vendor).find(item => String(item.id) === String(hotelItem.vendorHotelItemId)) : findVendorHotel(vendor, master, field);
-  return parseHotelRate(vh?.[field]);
+  const vendor = STORE.vendors.find(v => String(v.id) === String(vId || ''));
+  if (vendor) {
+    const vh = hotelItem.vendorHotelItemId ? getVendorHotelItems(vendor).find(item => String(item.id) === String(hotelItem.vendorHotelItemId)) : findVendorHotel(vendor, master, field);
+    const vendorMealRate = parseHotelRate(vh?.[field]);
+    if (vendorMealRate > 0) return vendorMealRate;
+  }
+  return parseHotelRate(master[field]);
 }
 
 /* ==================== HOTEL TOTALS ==================== */
@@ -562,7 +561,7 @@ function renderMakkahHotelsList() {
               <div class="rc room-nights"><label>Nights</label><input type="number" min="0" value="${r.nights || 0}" onchange="updateHotelRoom('makkah',${h.id},${r.id},'nights',this.value)"></div>
               <div class="rc room-vendor-rate"><label>Vendor Cost/Night</label><input type="number" style="text-align:right" value="${vendorRoomRate || ''}" placeholder="No ${r.type} rate" title="${esc(vendorRateHint || 'Hotel section room cost')}" readonly>${vendorRateHint ? `<small class="vendor-rate-hint">${esc(vendorRateHint)}</small>` : ''}</div>
               <div class="rc room-sell-rate"><label>Sell Price/Night</label><input type="number" min="0" value="${r.rate || ''}" placeholder="Enter sell" onchange="updateHotelRoom('makkah',${h.id},${r.id},'rate',this.value)"></div>
-              <div class="rc room-meal-rate"><label>Meal Rate/Person</label><input type="number" min="0" value="${r.mealRate || ''}" onchange="updateHotelRoom('makkah',${h.id},${r.id},'mealRate',this.value)" ${r.meal === 'room_only' ? 'disabled' : ''}></div>
+              <div class="rc room-meal-rate"><label>Meal Sell Price/Person</label><input type="number" min="0" value="${r.mealRate || ''}" onchange="updateHotelRoom('makkah',${h.id},${r.id},'mealRate',this.value)" ${r.meal === 'room_only' ? 'disabled' : ''}></div>
               <div class="rc room-meal"><label>Meal</label>
                 <select onchange="updateHotelRoom('makkah',${h.id},${r.id},'meal',this.value)">
                   <option value="room_only" ${r.meal === 'room_only' ? 'selected' : ''}>Room Only</option>
@@ -699,7 +698,7 @@ function renderMadinahHotelsList() {
               <div class="rc room-nights"><label>Nights</label><input type="number" min="0" value="${r.nights || 0}" onchange="updateHotelRoom('madinah',${h.id},${r.id},'nights',this.value)"></div>
               <div class="rc room-vendor-rate"><label>Vendor Cost/Night</label><input type="number" style="text-align:right" value="${vendorRoomRate || ''}" placeholder="No ${r.type} rate" title="${esc(vendorRateHint || 'Hotel section room cost')}" readonly>${vendorRateHint ? `<small class="vendor-rate-hint">${esc(vendorRateHint)}</small>` : ''}</div>
               <div class="rc room-sell-rate"><label>Sell Price/Night</label><input type="number" min="0" value="${r.rate || ''}" placeholder="Enter sell" onchange="updateHotelRoom('madinah',${h.id},${r.id},'rate',this.value)"></div>
-              <div class="rc room-meal-rate"><label>Meal Rate/Person</label><input type="number" min="0" value="${r.mealRate || ''}" onchange="updateHotelRoom('madinah',${h.id},${r.id},'mealRate',this.value)" ${r.meal === 'room_only' ? 'disabled' : ''}></div>
+              <div class="rc room-meal-rate"><label>Meal Sell Price/Person</label><input type="number" min="0" value="${r.mealRate || ''}" onchange="updateHotelRoom('madinah',${h.id},${r.id},'mealRate',this.value)" ${r.meal === 'room_only' ? 'disabled' : ''}></div>
               <div class="rc room-meal"><label>Meal</label>
                 <select onchange="updateHotelRoom('madinah',${h.id},${r.id},'meal',this.value)">
                   <option value="room_only" ${r.meal === 'room_only' ? 'selected' : ''}>Room Only</option>

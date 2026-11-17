@@ -1,14 +1,15 @@
 /* ============================================================
    UMRAH BUILDER — REPORTS (v4 — Fully Dynamic)
    ⭐ Dynamic vendor due + customer due from real payments
-   ⭐ Flight vendor excluded (only net/sell profit)
+   ⭐ Flight costs are included in package profit calculations.
    ============================================================ */
 
 /* reportChart, reportTypeChart declared in state.js */
 
-/* ⭐ Vendor cost calculation (Flight excluded — flight vendor nai) */
+/* ⭐ Package cost calculation */
 function getPackageVendorCost(p) {
   return (p.vendorHotelCost || 0) +
+         (p.vendorFlightCost || 0) +
          (p.vendorTransportCost || 0) +
          (p.vendorVisaCost || 0) +
          (p.vendorServiceCost || 0) +
@@ -44,10 +45,10 @@ function renderReports() {
 
   const revenue = pkgs.reduce((s, p) => s + (p.grandTotal || 0), 0);
 
-  /* ⭐ Dynamic vendor cost (Flight excluded) */
+  /* ⭐ Dynamic package cost */
   const vCost = pkgs.reduce((s, p) => s + getPackageVendorCost(p), 0);
 
-  /* ⭐ Net profit = revenue - vendor cost - VAT - service fee + flight profit already in margin */
+  /* ⭐ Net profit includes flight cost even when no flight vendor is assigned. */
   const vatTotal = pkgs.reduce((s, p) => s + (p.vatAmount || 0), 0);
   const serviceFeeTotal = pkgs.reduce((s, p) => s + (p.serviceFeeAmount || 0), 0);
   const profit = revenue - vCost - vatTotal - serviceFeeTotal;
