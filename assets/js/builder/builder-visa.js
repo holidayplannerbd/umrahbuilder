@@ -82,17 +82,11 @@ function renderVisasList() {
   ).join('');
 
   el.innerHTML = visaItems.map((v, i) => {
-    const paxAdult = intVal('paxAdult', 0);
-    const paxChild = intVal('paxChild', 0);
-    const paxInfant = intVal('paxInfant', 0);
-
-    const sellTotal = (v.priceAdult || 0) * paxAdult +
-                      (v.priceChild || 0) * paxChild +
-                      (v.priceInfant || 0) * paxInfant;
-
-    const costTotal = (v.costAdult || 0) * paxAdult +
-                      (v.costChild || 0) * paxChild +
-                      (v.costInfant || 0) * paxInfant;
+    const totalPax = intVal('paxAdult', 0) +
+                     intVal('paxChild', 0) +
+                     intVal('paxInfant', 0);
+    const sellTotal = (v.priceAdult || v.price || 0) * totalPax;
+    const costTotal = (v.costAdult || 0) * totalPax;
 
     return `<div class="item-card">
       <div class="item-card-head">

@@ -108,15 +108,11 @@ function calculatePackageTotals() {
   let vendorVisaCost = 0;
 
   (visaItems || []).forEach(v => {
-    const adultFee = Math.max(0, Number(v.priceAdult || v.price || 0));
-    const childFee = Math.max(0, Number(v.priceChild || adultFee));
-    const infantFee = Math.max(0, Number(v.priceInfant || 0));
-    visaCost += adultFee * paxAdult + childFee * paxChild + infantFee * paxInfant;
-
-    const adultCost = Math.max(0, Number(v.costAdult || 0));
-    const childCost = Math.max(0, Number(v.costChild || adultCost));
-    const infantCost = Math.max(0, Number(v.costInfant || 0));
-    vendorVisaCost += adultCost * paxAdult + childCost * paxChild + infantCost * paxInfant;
+    const totalPax = paxAdult + paxChild + paxInfant;
+    const feePerPax = Math.max(0, Number(v.priceAdult || v.price || 0));
+    const costPerPax = Math.max(0, Number(v.costAdult || 0));
+    visaCost += feePerPax * totalPax;
+    vendorVisaCost += costPerPax * totalPax;
   });
 
   /* ==================== Service ==================== */
@@ -199,6 +195,10 @@ function recalc() {
     if (typeof renderTransportsList === 'function') {
       renderTransportsList();
     }
+  }
+
+  if (typeof renderVisasList === 'function') {
+    renderVisasList();
   }
 
   const t = calculatePackageTotals();

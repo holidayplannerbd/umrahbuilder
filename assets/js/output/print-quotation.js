@@ -134,8 +134,8 @@ function calculateQuotationPassengerBreakdown(pkg) {
   const visaRates = (pkg.visas || []).reduce((result, visa) => {
     const adultFee = amount(visa.priceAdult || visa.price);
     result.adult += adultFee;
-    result.child += amount(visa.priceChild || adultFee);
-    result.infant += amount(visa.priceInfant);
+    result.child += adultFee;
+    result.infant += adultFee;
     return result;
   }, { adult: 0, child: 0, infant: 0 });
   let visaTotals = {
