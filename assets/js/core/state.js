@@ -33,6 +33,8 @@ let importantNotesItems = [];
 let paymentTermsItems = [];
 let cancellationPolicyItems = [];
 let ziyarahTransportItems = [];
+let hotelStayOrder = ['makkah', 'madinah'];
+let itineraryRouteOrder = 'makkah-first';
 
 /* ==================== COUNTERS ==================== */
 let mC = 0, mdC = 0, fC = 0, tC = 0, vC = 0, sC = 0, itC = 0;
@@ -127,6 +129,7 @@ let hotelImgs = [null, null, null];
 
 /* ==================== ITINERARY SORTABLE ==================== */
 let itinerarySortable = null;
+let hotelStaySortable = null;
 
 /* ==================== TASKS ==================== */
 let tasksCache = [];

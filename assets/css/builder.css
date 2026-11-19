@@ -740,3 +740,21 @@ body.dark .summary-section { background: linear-gradient(135deg, #2a1a0a, #1f140
 .final-row span:last-child { font-size: 22px; font-weight: 900; color: var(--primary); }
 .per-person-row span:last-child { font-size: 17px; font-weight: 900; color: var(--green); }
 #profitMargin { color: var(--amber); font-weight: 800; }
+
+#hotelStaySections { display: flex; flex-direction: column; }
+.stay-order-handle {
+  display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 34px;
+  border: 1px solid var(--border); border-radius: 50%; color: var(--text-2);
+  background: var(--card); font-size: 19px; line-height: 1; cursor: grab;
+  user-select: none;
+}
+.stay-order-handle:active { cursor: grabbing; }
+.stay-sort-ghost { opacity: .4; border: 1px dashed var(--primary) !important; }
+.itinerary-route-toggle {
+  display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 34px;
+  padding: 0; border: 1px solid var(--border); border-radius: 50%;
+  background: var(--card); color: var(--primary); font-size: 21px;
+  line-height: 1; cursor: pointer; transition: transform .18s, border-color .18s, background .18s;
+}
+.itinerary-route-toggle:hover { transform: rotate(45deg); border-color: var(--primary); background: var(--primary-bg); }
+.itinerary-route-toggle:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }

@@ -420,6 +420,11 @@ async function viewPackage(id) {
   // ⭐ এখানে 'Makkah' এবং 'Madinah' স্ট্রিং হিসেবে পাস করা হয়েছে
   for (const h of (p.makkahHotels || [])) makkahRowsHtml += await hotelCard(h, 'Makkah');
   for (const h of (p.madinahHotels || [])) madinahRowsHtml += await hotelCard(h, 'Madinah');
+  const staySectionsHtml = normalizeHotelStayOrder(p.hotelStayOrder).map(city =>
+    city === 'madinah'
+      ? (madinahRowsHtml ? sec('🕌 Madinah Hotels', [1], () => madinahRowsHtml) : '')
+      : (makkahRowsHtml ? sec('🕌 Makkah Hotels', [1], () => makkahRowsHtml) : '')
+  ).join('');
 
   /* Vendor payments */
   let vendorPaidForPkg = 0;
@@ -617,8 +622,7 @@ async function viewPackage(id) {
           </div>
         </div>
 
-        ${makkahRowsHtml ? sec('🕌 Makkah Hotels', [1], () => makkahRowsHtml) : ''}
-        ${madinahRowsHtml ? sec('🕌 Madinah Hotels', [1], () => madinahRowsHtml) : ''}
+        ${staySectionsHtml}
         ${(p.ziyarahTransport && p.ziyarahTransport.length) ? sec('★ Ziyarah Transport', p.ziyarahTransport, t => simpleRow('🚐', t.name || 'Ziyarah', CAR_SEATERS[t.car]?.label || t.car, (Number(t.sellPrice ?? t.price) || 0) * (t.cars || 1))) : ''}
         ${sec('Flights', p.flights || [], flightRow)}
         ${sec('▣ Transports', p.transports || [], transportRow)}

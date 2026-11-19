@@ -2,6 +2,49 @@
    UMRAH BUILDER — BUILDER / HOTELS
    ============================================================ */
 
+function normalizeHotelStayOrder(order) {
+  const validOrder = Array.isArray(order) ? order.filter(city => city === 'makkah' || city === 'madinah') : [];
+  return [...new Set([...validOrder, 'makkah', 'madinah'])];
+}
+
+function applyHotelStayOrder(order = hotelStayOrder) {
+  const container = $('hotelStaySections');
+  if (!container) return;
+
+  hotelStayOrder = normalizeHotelStayOrder(order);
+  hotelStayOrder.forEach(city => {
+    const section = container.querySelector(`[data-stay-section="${city}"]`);
+    if (section) container.appendChild(section);
+  });
+
+  const updateNumbers = () => {
+    Array.from(container.querySelectorAll('[data-stay-section]')).forEach((section, index) => {
+      const number = section.querySelector('.section-header .num');
+      if (number) number.textContent = String(index + 3);
+    });
+  };
+  updateNumbers();
+
+  if (hotelStaySortable) {
+    hotelStaySortable.destroy();
+    hotelStaySortable = null;
+  }
+  if (typeof Sortable === 'undefined') return;
+
+  hotelStaySortable = new Sortable(container, {
+    animation: 180,
+    handle: '[data-stay-handle]',
+    draggable: '[data-stay-section]',
+    ghostClass: 'stay-sort-ghost',
+    onEnd: () => {
+      hotelStayOrder = normalizeHotelStayOrder(
+        Array.from(container.querySelectorAll('[data-stay-section]')).map(section => section.dataset.staySection)
+      );
+      updateNumbers();
+    }
+  });
+}
+
 /* ==================== MAKKAH HOTEL ==================== */
 function addMakkahHotel() {
   makkahItems.push({

@@ -42,6 +42,8 @@ async function openBuilder() {
 
   editingPackageId = null;
   builderDefaultRoomSharing = 'double';
+  hotelStayOrder = ['makkah', 'madinah'];
+  itineraryRouteOrder = 'makkah-first';
 
   if ($('builderTitle')) $('builderTitle').textContent = '🕋 New Umrah Package';
   if ($('savePackageBtn')) $('savePackageBtn').textContent = '💾 Save Package';
@@ -116,6 +118,7 @@ async function openBuilder() {
   addMakkahHotel();
   addMadinahHotel();
   renderAll();
+  applyHotelStayOrder();
   recalc();
   toggleMarkupInput();
   openModal('builderModal');
@@ -132,6 +135,11 @@ async function editPackage(id) {
   if (!p) return;
 
   editingPackageId = id;
+  hotelStayOrder = normalizeHotelStayOrder(p.hotelStayOrder);
+  const firstRouteItem = (p.itinerary || []).find(it => it.type === 'arrival') ||
+    (p.itinerary || []).find(it => ['Makkah', 'Madinah'].includes(it.city));
+  itineraryRouteOrder = p.itineraryRouteOrder ||
+    (String(firstRouteItem?.city || '').toLowerCase() === 'madinah' ? 'madinah-first' : 'makkah-first');
   if ($('builderTitle')) $('builderTitle').textContent = '✏️ Edit Umrah Package';
   if ($('savePackageBtn')) $('savePackageBtn').textContent = '💾 Update Package';
 
@@ -260,6 +268,7 @@ async function editPackage(id) {
 
   syncHotelRoomNightsFromDates(p.nights || 0);
   renderAll();
+  applyHotelStayOrder();
   toggleMarkupInput();
   recalc();
   openModal('builderModal');
@@ -340,7 +349,7 @@ async function savePackage() {
 
     const data = {
       ...(previous || {}), id: editingPackageId || Date.now(), userId: previous?.userId || currentUid, refNo, name, type: strVal('pkgType', 'Standard'), status: strVal('pkgStatus', 'Draft'), checkIn: ci, checkOut: co, start: ci, end: co, nights, days, duration: nights + 'N / ' + days + 'D', validUntil: strVal('pkgValidUntil'), followupDate: strVal('pkgFollowupDate'), reference: strVal('pkgReference'), paxAdult: t.paxAdult, paxChild: t.paxChild, paxInfant: t.paxInfant, roomSharing: strVal('roomSharing', 'double'), roomCount: intVal('roomCount', 1), childWithBed: intVal('childWithBed', 0), childNoBed: intVal('childNoBed', 0), customerId, customerName: custName, customerPhone: custPhone, customerPassport: custPassport, customerEmail: custEmail, customerNationality: custNationality, specialRequest: strVal('pkgSpecialRequest'), cancellationPolicy: strVal('pkgCancellationPolicy'), notes: strVal('pkgNotes'),
-      itinerary: cappedItin, inclusions: JSON.parse(JSON.stringify(dedupeTextItems(inclusionsItems))), exclusions: JSON.parse(JSON.stringify(dedupeTextItems(exclusionsItems))), importantNotes: JSON.parse(JSON.stringify(dedupeTextItems(importantNotesItems))), paymentTerms: JSON.parse(JSON.stringify(dedupeTextItems(paymentTermsItems))), cancellationPolicyItems: JSON.parse(JSON.stringify(dedupeTextItems(cancellationPolicyItems))),
+      itinerary: cappedItin, itineraryRouteOrder, hotelStayOrder: [...hotelStayOrder], inclusions: JSON.parse(JSON.stringify(dedupeTextItems(inclusionsItems))), exclusions: JSON.parse(JSON.stringify(dedupeTextItems(exclusionsItems))), importantNotes: JSON.parse(JSON.stringify(dedupeTextItems(importantNotesItems))), paymentTerms: JSON.parse(JSON.stringify(dedupeTextItems(paymentTermsItems))), cancellationPolicyItems: JSON.parse(JSON.stringify(dedupeTextItems(cancellationPolicyItems))),
       ziyarahTransport: JSON.parse(JSON.stringify(ziyarahTransportItems)), makkahHotels: JSON.parse(JSON.stringify(makkahItems)), madinahHotels: JSON.parse(JSON.stringify(madinahItems)), flights: JSON.parse(JSON.stringify(flightItems)), transports: JSON.parse(JSON.stringify(transportItems)), visas: JSON.parse(JSON.stringify(visaItems)), services: JSON.parse(JSON.stringify(serviceItems)),
       hotelCost: t.hotelCost, flightCost: t.flightCost, transportCost: t.transportCost, visaCost: t.visaCost, serviceCost: t.serviceCost, ziyarahTransportCost: t.ziyarahTransportCost, subTotal: t.subTotal,
       vendorHotelCost: t.vendorHotelCost, vendorFlightCost: t.vendorFlightCost, vendorTransportCost: t.vendorTransportCost, vendorServiceCost: t.vendorServiceCost, vendorZiyarahCost: t.vendorZiyarahCost, vendorVisaCost: t.vendorVisaCost, totalVendorCost: t.totalVendorCost, flightProfit: t.flightProfit,

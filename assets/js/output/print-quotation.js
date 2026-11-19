@@ -246,6 +246,7 @@ async function printQuotation(id) {
   const paxInfant = p.paxInfant || 0;
   const makkahHotels = p.makkahHotels || [];
   const madinahHotels = p.madinahHotels || [];
+  const hotelStayOrder = normalizeHotelStayOrder(p.hotelStayOrder);
 
   /* Preload hotel images as data URLs */
   const hotelImages = {};
@@ -315,8 +316,11 @@ async function printQuotation(id) {
     }).join('');
   };
 
-  hotelRowsHTML += buildHotelRows(makkahHotels, 'Makkah');
-  hotelRowsHTML += buildHotelRows(madinahHotels, 'Madinah');
+  hotelStayOrder.forEach(city => {
+    hotelRowsHTML += city === 'madinah'
+      ? buildHotelRows(madinahHotels, 'Madinah')
+      : buildHotelRows(makkahHotels, 'Makkah');
+  });
 
   let passengersStr = `${paxAdult}A`;
   if (paxChild) passengersStr += ` + ${paxChild}C`;

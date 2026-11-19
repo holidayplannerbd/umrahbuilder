@@ -3,6 +3,64 @@
    Auto-generate from dates + drag-drop + render
    ============================================================ */
 
+function getItineraryRouteCities() {
+  return itineraryRouteOrder === 'madinah-first'
+    ? { first: 'Madinah', second: 'Makkah' }
+    : { first: 'Makkah', second: 'Madinah' };
+}
+
+function getItineraryArrivalDescription(city) {
+  if (city === 'Madinah') {
+    return `Activities\n\nDeparture from Dhaka.\n\nMeet & greet by our airport representative upon arrival.\n\nPrivate transfer from the airport to your hotel in Madinah.\n\nCheck in and relax after your journey.\n\nOffer prayers at Masjid An-Nabawi.`;
+  }
+  return `Activities\n\nDeparture from Dhaka to Jeddah International Airport.\n\nMeet & greet by our airport representative upon arrival.\n\nPrivate transfer from Jeddah Airport to your hotel in Makkah.\n\nCheck in and relax after your journey.\n\nPerform your Umrah under the guidance of our experienced tour guide.`;
+}
+
+function getItineraryArrivalTitle(city) {
+  return city === 'Makkah'
+    ? 'Arrival in Jeddah – Transfer to Makkah'
+    : 'Arrival – Transfer to Madinah';
+}
+
+function getItineraryTransferDescription(from, to) {
+  if (from === 'Madinah') {
+    return `Activities\n\nBreakfast at the hotel.\n\nCheck out from the Madinah hotel.\n\nTransfer to Makkah by private air-conditioned vehicle.\n\nJourney duration: Approximately 5–6 hours (Non-stop).\n\nCheck in to the Makkah hotel.\n\nRest and prepare to perform Umrah.`;
+  }
+  return `Activities\n\nBreakfast at the hotel.\n\nCheck out from the Makkah hotel.\n\nTransfer to Madinah by private air-conditioned vehicle.\n\nJourney duration: Approximately 5–6 hours (Non-stop).\n\nCheck in to the Madinah hotel.\n\nOffer prayers at Masjid An-Nabawi and spend the evening in Ibadah.`;
+}
+
+function getItineraryCityDay(city, stayDay, ziyarahDescription) {
+  if (city === 'Makkah') {
+    if (stayDay === 1) {
+      return {
+        city, title: 'Perform Umrah', type: 'umrah',
+        description: `Activities\n\nBreakfast at the hotel.\n\nPerform Umrah under the guidance of our experienced tour guide.`
+      };
+    }
+    if (stayDay === 2) {
+      return {
+        city, title: 'Ziyarah Tour in Makkah', type: 'ziyarah', ziyarahZone: 'makkah',
+        description: ziyarahDescription || `Activities\n\nAfter breakfast, guided Ziyarah tour of historical Islamic sites in Makkah.\n\nPlaces to Visit\n\nMina\n\nArafat (Mount Arafat)\n\nMuzdalifah\n\nJabal Al-Noor (Cave of Hira)\n\nJabal Thawr\n\nJamarat\n\nJannat Al-Mu'alla`
+      };
+    }
+    return {
+      city, title: 'Worship & Spiritual Activities in Makkah', type: 'worship',
+      description: `Activities\n\nBreakfast at the hotel.\n\nPerform Salah at Masjid Al Haram.\n\nPerform Nafl Tawaf.\n\nRecite the Holy Qur'an.\n\nEngage in Dhikr and Du'a.`
+    };
+  }
+
+  if (stayDay === 1) {
+    return {
+      city, title: 'Ziyarah Tour in Madinah', type: 'ziyarah', ziyarahZone: 'madinah',
+      description: ziyarahDescription || `Activities\n\nAfter breakfast, guided Ziyarah tour of historical Islamic sites in Madinah.\n\nPlaces to Visit\n\nMasjid Quba\n\nMasjid Al-Qiblatain\n\nUhud Mountain & Martyrs Cemetery\n\nMasjid Al-Jumu'ah`
+    };
+  }
+  return {
+    city, title: 'Worship & Spiritual Activities in Madinah', type: 'worship',
+    description: `Activities\n\nBreakfast at the hotel.\n\nPerform daily prayers at Masjid An-Nabawi.\n\nVisit Rawdah (subject to permit).\n\nRecite the Holy Qur'an.\n\nEngage in Dhikr, Du'a and personal Ibadah.`
+  };
+}
+
 /* ==================== AUTO-GENERATE ITINERARY ==================== */
 function regenerateItineraryFromDates() {
   try {
@@ -20,12 +78,13 @@ function regenerateItineraryFromDates() {
     if (totalNights <= 0) return;
     const totalDays = totalNights + 1;
 
-    // Determine transit day (Makkah → Madinah)
-    const makkahHotelWithDates = makkahItems.find(h => h.hotelId && h.checkOut);
+    const routeCities = getItineraryRouteCities();
+    const firstStayItems = routeCities.first === 'Madinah' ? madinahItems : makkahItems;
+    const firstHotelWithDates = firstStayItems.find(h => h.hotelId && h.checkOut);
     let transitDate, transitDayNum;
 
-    if (makkahHotelWithDates && makkahHotelWithDates.checkOut) {
-      transitDate = makkahHotelWithDates.checkOut;
+    if (firstHotelWithDates && firstHotelWithDates.checkOut) {
+      transitDate = firstHotelWithDates.checkOut;
       transitDayNum = daysBetween(pkgIn, transitDate) + 1;
       if (transitDayNum < 2) transitDayNum = 2;
       if (transitDayNum > totalDays - 1) transitDayNum = Math.max(2, totalDays - 1);
@@ -64,52 +123,31 @@ function regenerateItineraryFromDates() {
         zone = 'transit';
         description = `Activities\n\nBreakfast at the hotel.\n\nCheck out from the hotel.\n\nPrivate transfer to the airport.\n\nDeparture for your return journey.`;
       } else if (i === 0) {
-        city = 'Makkah';
-        title = 'Arrival in Jeddah – Transfer to Makkah';
+        city = routeCities.first;
+        title = getItineraryArrivalTitle(routeCities.first);
         type = 'arrival';
         fixed = true;
-        zone = 'makkah';
-        description = `Activities\n\nDeparture from Dhaka to Jeddah International Airport.\n\nMeet & greet by our airport representative upon arrival.\n\nPrivate transfer from Jeddah Airport to your hotel in Makkah.\n\nCheck in and relax after your journey.\n\nPerform your Umrah under the guidance of our experienced tour guide.`;
+        zone = routeCities.first.toLowerCase();
+        description = getItineraryArrivalDescription(routeCities.first);
       } else if (dayNum === transitDayNum) {
         city = 'Transit';
-        title = 'Transfer from Makkah to Madinah';
+        title = `Transfer from ${routeCities.first} to ${routeCities.second}`;
         type = 'transfer';
         fixed = true;
         zone = 'transit';
-        description = `Activities\n\nBreakfast at the hotel.\n\nCheck out from the Makkah hotel.\n\nTransfer to Madinah by private air-conditioned vehicle.\n\nJourney duration: Approximately 5–6 hours (Non-stop).\n\nCheck in to the Madinah hotel.\n\nOffer prayers at Masjid An-Nabawi and spend the evening in Ibadah.`;
-      } else if (dayNum < transitDayNum) {
-        zone = 'makkah';
-        if (dayNum === 2) {
-          city = 'Makkah';
-          title = 'Perform Umrah';
-          type = 'umrah';
-          description = `Activities\n\nBreakfast at the hotel.\n\nPerform Umrah under the guidance of our experienced tour guide.`;
-        } else if (dayNum === 3) {
-          city = 'Makkah';
-          title = 'Ziyarah Tour in Makkah';
-          type = 'ziyarah';
-          ziyarahZone = 'makkah';
-          description = makkahZiyarahDesc || `Activities\n\nAfter breakfast, guided Ziyarah tour of historical Islamic sites in Makkah.\n\nPlaces to Visit\n\nMina\n\nArafat (Mount Arafat)\n\nMuzdalifah\n\nJabal Al-Noor (Cave of Hira)\n\nJabal Thawr\n\nJamarat\n\nJannat Al-Mu'alla`;
-        } else {
-          city = 'Makkah';
-          title = 'Worship & Spiritual Activities in Makkah';
-          type = 'worship';
-          description = `Activities\n\nBreakfast at the hotel.\n\nPerform Salah at Masjid Al Haram.\n\nPerform Nafl Tawaf.\n\nRecite the Holy Qur'an.\n\nEngage in Dhikr and Du'a.`;
-        }
+        description = getItineraryTransferDescription(routeCities.first, routeCities.second);
       } else {
-        zone = 'madinah';
-        if (dayNum === transitDayNum + 1) {
-          city = 'Madinah';
-          title = 'Ziyarah Tour in Madinah';
-          type = 'ziyarah';
-          ziyarahZone = 'madinah';
-          description = madinahZiyarahDesc || `Activities\n\nAfter breakfast, guided Ziyarah tour of historical Islamic sites in Madinah.\n\nPlaces to Visit\n\nMasjid Quba\n\nMasjid Al-Qiblatain\n\nUhud Mountain & Martyrs Cemetery\n\nMasjid Al-Jumu'ah`;
-        } else {
-          city = 'Madinah';
-          title = 'Worship & Spiritual Activities in Madinah';
-          type = 'worship';
-          description = `Activities\n\nBreakfast at the hotel.\n\nPerform daily prayers at Masjid An-Nabawi.\n\nVisit Rawdah (subject to permit).\n\nRecite the Holy Qur'an.\n\nEngage in Dhikr, Du'a and personal Ibadah.`;
-        }
+        const isFirstStay = dayNum < transitDayNum;
+        const activityCity = isFirstStay ? routeCities.first : routeCities.second;
+        const stayDay = isFirstStay ? dayNum - 1 : dayNum - transitDayNum;
+        const ziyarahDescription = activityCity === 'Makkah' ? makkahZiyarahDesc : madinahZiyarahDesc;
+        const activity = getItineraryCityDay(activityCity, stayDay, ziyarahDescription);
+        city = activity.city;
+        title = activity.title;
+        type = activity.type;
+        ziyarahZone = activity.ziyarahZone || null;
+        zone = activityCity.toLowerCase();
+        description = activity.description;
       }
 
       newItinerary.push({
@@ -134,11 +172,61 @@ function regenerateItineraryFromDates() {
   }
 }
 
+function updateItineraryRouteToggle() {
+  const button = $('itineraryRouteToggle');
+  if (!button) return;
+  const nextCity = itineraryRouteOrder === 'madinah-first' ? 'Makkah' : 'Madinah';
+  button.title = `Switch to ${nextCity} first`;
+  button.setAttribute('aria-label', `Switch to ${nextCity} first`);
+}
+
+function toggleItineraryRouteOrder() {
+  const nextOrder = itineraryRouteOrder === 'madinah-first' ? 'makkah-first' : 'madinah-first';
+  const arrival = itineraryItems.find(item => item.type === 'arrival');
+  const transfer = itineraryItems.find(item => item.type === 'transfer');
+  const departure = itineraryItems.find(item => item.type === 'departure');
+  const makkahDays = itineraryItems.filter(item => item !== arrival && item.zone === 'makkah');
+  const madinahDays = itineraryItems.filter(item => item !== arrival && item.zone === 'madinah');
+  const included = new Set([arrival, transfer, departure, ...makkahDays, ...madinahDays].filter(Boolean));
+  const otherDays = itineraryItems.filter(item => !included.has(item));
+  const firstDays = nextOrder === 'madinah-first' ? madinahDays : makkahDays;
+  const secondDays = nextOrder === 'madinah-first' ? makkahDays : madinahDays;
+
+  itineraryItems = [
+    ...(arrival ? [arrival] : []),
+    ...firstDays,
+    ...(transfer ? [transfer] : []),
+    ...secondDays,
+    ...otherDays,
+    ...(departure ? [departure] : [])
+  ];
+  itineraryRouteOrder = nextOrder;
+
+  const routeCities = getItineraryRouteCities();
+  if (arrival) {
+    arrival.city = routeCities.first;
+    arrival.zone = routeCities.first.toLowerCase();
+    arrival.title = getItineraryArrivalTitle(routeCities.first);
+    arrival.description = getItineraryArrivalDescription(routeCities.first);
+  }
+  if (transfer) {
+    transfer.title = `Transfer from ${routeCities.first} to ${routeCities.second}`;
+    transfer.description = getItineraryTransferDescription(routeCities.first, routeCities.second);
+  }
+
+  renumberItinerary();
+  const checkIn = strVal('pkgCheckIn');
+  if (checkIn) itineraryItems.forEach((item, index) => { item.date = addDays(checkIn, index); });
+  renderItineraryList();
+  toast(`✓ ${routeCities.first} first itinerary`);
+}
+
 /* ==================== RENDER ITINERARY LIST ==================== */
 function renderItineraryList() {
   const el = $('itineraryList');
   if (!el) return;
 
+  updateItineraryRouteToggle();
   if ($('itineraryCount')) $('itineraryCount').textContent = itineraryItems.length;
 
   if (!itineraryItems.length) {

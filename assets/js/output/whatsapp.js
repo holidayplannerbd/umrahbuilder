@@ -24,8 +24,12 @@ function buildWhatsAppMessage(p) {
   msg += `📆 ${p.nights || 0}N / ${p.days || 0}D\n`;
   msg += `👥 ${p.paxAdult || 0}A${p.paxChild ? ' + ' + p.paxChild + 'C' : ''}\n\n`;
 
-  msg += `🕌 *Makkah:* ${(p.makkahHotels || []).map(h => `${h.name} (${h.rooms?.length || 0} rooms)`).join(', ') || '—'}\n`;
-  msg += `🕌 *Madinah:* ${(p.madinahHotels || []).map(h => `${h.name} (${h.rooms?.length || 0} rooms)`).join(', ') || '—'}\n\n`;
+  normalizeHotelStayOrder(p.hotelStayOrder).forEach(city => {
+    const cityName = city === 'madinah' ? 'Madinah' : 'Makkah';
+    const hotels = city === 'madinah' ? p.madinahHotels || [] : p.makkahHotels || [];
+    msg += `🕌 *${cityName}:* ${hotels.map(h => `${h.name} (${h.rooms?.length || 0} rooms)`).join(', ') || '—'}\n`;
+  });
+  msg += '\n';
 
   const packagePaid = getPackagePaid(p);
   const packageDue = Math.max(0, Number(p.grandTotal || 0) - packagePaid);
