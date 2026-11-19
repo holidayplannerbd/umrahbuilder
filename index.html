@@ -650,7 +650,7 @@ Cancellation within 24 hours: No refund</textarea></div>
             <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;flex-shrink:0">💼</div>
             <div><div class="an-profile-name">Accounts & Ledger</div><div class="an-profile-role">Real-time financial summary</div></div>
           </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-danger btn-sm" onclick="openRefundModal()">♻️ Add Refund</button><button class="btn btn-primary btn-sm" onclick="openCreateInvoiceModal()">🧾 Create Invoice</button><button class="btn btn-primary btn-sm" onclick="renderAccounts()">↻ Refresh</button></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-danger btn-sm" onclick="openRefundModal()">♻️ Add Refund</button><button class="btn btn-primary btn-sm" onclick="openCreateInvoiceModal()">🧾 Create Invoice</button><button class="btn btn-primary btn-sm" onclick="openPaymentAdviceModal()">📄 Payment Advice</button><button class="btn btn-primary btn-sm" onclick="renderAccounts()">↻ Refresh</button></div>
           
         </div>
         <div class="an-kpi-grid">
@@ -732,7 +732,7 @@ Cancellation within 24 hours: No refund</textarea></div>
           <div class="an-kpi"><div class="an-kpi-head"><span class="an-kpi-icon" style="background:#faf5ff;color:#a855f7">🏦</span><span class="an-kpi-label">Bank Docs</span></div><div class="an-kpi-value" id="docBank" style="color:var(--purple)">0</div><div class="an-kpi-foot">Statements</div></div>
         </div>
         <div class="an-card"><div class="an-card-head"><h3>📂 Categories</h3></div><div id="docCategoryGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px"></div></div>
-        <div class="an-card" style="padding:14px"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input type="text" id="docSearch" class="tk-input" placeholder="🔍 Search title, vendor, package..." style="flex:1;min-width:200px" oninput="renderDocuments()"><select id="docFilterType" class="tk-input" style="min-width:150px" onchange="renderDocuments()"><option value="all">📋 All Types</option><option value="bill">🧾 Customer Bill</option><option value="invoice">🧾 Vendor Invoice</option><option value="receipt">💰 Receipt</option><option value="bank">🏦 Bank Statement</option><option value="voucher">📑 Voucher</option><option value="vat">🧮 VAT/Tax</option><option value="refund">♻️ Refund</option><option value="contract">📋 Contract</option><option value="cashbook">💵 Cash Book</option><option value="other">📦 Other</option></select><select id="docFilterMonth" class="tk-input" style="min-width:130px" onchange="renderDocuments()"><option value="all">📅 All Time</option><option value="thismonth">This Month</option><option value="lastmonth">Last Month</option><option value="thisyear">This Year</option></select></div></div>
+        <div class="an-card" style="padding:14px"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input type="text" id="docSearch" class="tk-input" placeholder="🔍 Search title, vendor, package..." style="flex:1;min-width:200px" oninput="renderDocuments()"><select id="docFilterType" class="tk-input" style="min-width:150px" onchange="renderDocuments()"><option value="all">📋 All Types</option><option value="bill">🧾 Customer Bill</option><option value="paymentAdvice">📄 Payment Advice</option><option value="invoice">🧾 Vendor Invoice</option><option value="receipt">💰 Receipt</option><option value="bank">🏦 Bank Statement</option><option value="voucher">📑 Voucher</option><option value="vat">🧮 VAT/Tax</option><option value="refund">♻️ Refund</option><option value="contract">📋 Contract</option><option value="cashbook">💵 Cash Book</option><option value="other">📦 Other</option></select><select id="docFilterMonth" class="tk-input" style="min-width:130px" onchange="renderDocuments()"><option value="all">📅 All Time</option><option value="thismonth">This Month</option><option value="lastmonth">Last Month</option><option value="thisyear">This Year</option></select></div></div>
         <div class="an-card"><div class="an-card-head"><h3>📄 All Documents</h3><span class="an-badge" id="docCountBadge">0 files</span></div><div id="docList"></div></div>
       </div>
     </div>
@@ -1694,6 +1694,60 @@ Cancellation within 24 hours: No refund</textarea></div>
       <div class="right-actions">
         <button class="btn btn-secondary" onclick="closeModal('invoiceSetupModal')">Cancel</button>
         <button class="btn btn-primary" onclick="saveAndPrintInvoice()">💾 Save & View Invoice</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PAYMENT ADVICE MODAL ============ -->
+<div class="modal-bg" id="paymentAdviceSetupModal">
+  <div class="modal wide" style="max-width: 900px;">
+    <div class="modal-head">
+      <h2>📄 Payment Advice / Credit Approval Form</h2>
+      <button class="close-btn" onclick="closeModal('paymentAdviceSetupModal')">✕</button>
+    </div>
+    <div class="modal-body" style="max-height: 75vh; overflow-y: auto;">
+      <input type="hidden" id="paId">
+      <div class="grid-2">
+        <div class="field"><label>Invoice No.</label><input id="paInvoiceNo" type="text"></div>
+        <div class="field"><label>Payment Advice No. <span class="req">*</span></label><input id="paAdviceNo" type="text"></div>
+        <div class="field"><label>Date</label><input id="paDate" type="date"></div>
+        <div class="field"><label>Class</label><input id="paClass" type="text"></div>
+        <div class="field"><label>Pax Name 1 <span class="req">*</span></label><input id="paPaxName1" type="text"></div>
+        <div class="field"><label>Travel Date</label><input id="paTravelDate" type="date"></div>
+        <div class="field"><label>Pax Name 2</label><input id="paPaxName2" type="text"></div>
+        <div class="field"><label>Carrier</label><input id="paCarrier" type="text"></div>
+        <div class="field"><label>Pax Name 3</label><input id="paPaxName3" type="text"></div>
+        <div class="field"><label>Issued By</label><input id="paIssuedBy" type="text"></div>
+        <div class="field"><label>Ticket No. 1</label><input id="paTicketNo1" type="text"></div>
+        <div class="field"><label>Sector</label><input id="paSector" type="text"></div>
+        <div class="field"><label>Ticket No. 2</label><input id="paTicketNo2" type="text"></div>
+        <div class="field"><label>Client Name</label><input id="paClientName" type="text"></div>
+        <div class="field"><label>Contact Person</label><input id="paContactPerson" type="text"></div>
+        <div class="field"><label>Contact No.</label><input id="paContactNo" type="text"></div>
+        <div class="field"><label>Address</label><input id="paAddress" type="text"></div>
+        <div class="field"><label>Sales Person</label><input id="paSalesPerson" type="text"></div>
+        <div class="field"><label>Credit Period</label><select id="paCreditPeriod"><option value="">Select period</option><option>15 Days</option><option>30 Days</option><option>Paid Mr-</option></select></div>
+        <div class="field"><label>Paid To (if applicable)</label><input id="paCreditTo" type="text"></div>
+        <div class="field"><label>Client Category</label><select id="paClientCategory"><option value="">Select category</option><option>Personal</option><option>Corp.</option><option>In-house</option><option>General</option></select></div>
+      </div>
+      <div class="section-divider" style="margin:20px 0 10px">Fare / Amount Summary</div>
+      <div class="grid-2">
+        <div class="field"><label>Fare</label><input id="paFare" type="number" min="0" step="0.01"></div>
+        <div class="field"><label>Taxes</label><input id="paTaxes" type="number" min="0" step="0.01"></div>
+        <div class="field"><label>VAT &amp; AIT</label><input id="paVatAit" type="number" min="0" step="0.01"></div>
+        <div class="field"><label>Discount</label><input id="paDiscount" type="number" min="0" step="0.01"></div>
+        <div class="field"><label>Service Charges</label><input id="paServiceCharges" type="number" min="0" step="0.01"></div>
+        <div class="field"><label>Net Bill</label><input id="paNetBill" type="number" min="0" step="0.01"></div>
+        <div class="field"><label>Invoice Amount</label><input id="paInvoiceAmount" type="number" min="0" step="0.01"></div>
+      </div>
+      <div class="field" style="margin-top:12px"><label>Note</label><textarea id="paNote" rows="2"></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <div></div>
+      <div class="right-actions">
+        <button class="btn btn-secondary" onclick="closeModal('paymentAdviceSetupModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="savePaymentAdvice()">💾 Save &amp; View Payment Advice</button>
       </div>
     </div>
   </div>

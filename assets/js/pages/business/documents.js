@@ -7,6 +7,7 @@
 
 const DOC_TYPES = {
   bill:      { label: 'Customer Bill',    icon: '🧾', color: '#0ea5e9', bg: '#f0f9ff' },
+  paymentAdvice: { label: 'Payment Advice', icon: '📄', color: '#2563eb', bg: '#eff6ff' },
   invoice:   { label: 'Vendor Invoice',   icon: '🧾', color: '#22c55e', bg: '#f0fdf4' },
   receipt:   { label: 'Payment Receipt',  icon: '💰', color: '#f59e0b', bg: '#fffbeb' },
   bank:      { label: 'Bank Statement',   icon: '🏦', color: '#a855f7', bg: '#faf5ff' },
@@ -81,7 +82,12 @@ async function renderDocuments() {
       (d.packageName || '').toLowerCase().includes(search) ||
       (d.uploadedByName || '').toLowerCase().includes(search) ||
       (d.invoiceData?.customerName || '').toLowerCase().includes(search) ||
-      (d.invoiceData?.invoiceNo || '').toLowerCase().includes(search)
+      (d.invoiceData?.invoiceNo || '').toLowerCase().includes(search) ||
+      (d.paymentAdviceData?.adviceNo || '').toLowerCase().includes(search) ||
+      (d.paymentAdviceData?.invoiceNo || '').toLowerCase().includes(search) ||
+      (d.paymentAdviceData?.clientName || '').toLowerCase().includes(search) ||
+      (d.paymentAdviceData?.contactPerson || '').toLowerCase().includes(search) ||
+      (d.paymentAdviceData?.paxNames || []).some(name => (name || '').toLowerCase().includes(search))
     );
   }
 
@@ -121,8 +127,11 @@ async function renderDocuments() {
   listEl.innerHTML = filtered.map(d => {
     const cfg = DOC_TYPES[d.type] || DOC_TYPES.other;
     const expiry = d.expiry && new Date(d.expiry) < new Date();
+    const isPaymentAdvice = !!d.paymentAdviceData;
+    const isGeneratedInvoice = !!d.invoiceData;
+    const viewAction = isPaymentAdvice ? `viewSavedPaymentAdvice('${d.id}')` : isGeneratedInvoice ? `viewSavedInvoice('${d.id}')` : `viewDocument('${d.id}')`;
     return `
-      <div style="padding:14px;background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:8px;display:flex;gap:14px;align-items:center;transition:all .15s;cursor:pointer" onclick="${d.invoiceData ? `viewSavedInvoice('${d.id}')` : `viewDocument('${d.id}')`}" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="padding:14px;background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:8px;display:flex;gap:14px;align-items:center;transition:all .15s;cursor:pointer" onclick="${viewAction}" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
         <div style="width:52px;height:52px;border-radius:12px;background:${cfg.bg};display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;border:1.5px solid ${cfg.color}33">
           ${cfg.icon}
         </div>
@@ -139,11 +148,14 @@ async function renderDocuments() {
             ${d.amount ? `<span style="color:var(--primary);font-weight:800">৳ ${Number(d.amount).toLocaleString()}</span>` : ''}
           </div>
           <div style="font-size:10.5px;color:var(--text-3);margin-top:4px">
-            📎 ${esc(d.uploadedByName || 'Unknown')} · ${d.invoiceData ? 'Generated invoice' + (d.notes ? ' · ' + esc(d.notes) : '') : (d.fileName ? esc(d.fileName) : 'No file') + ' · ' + (d.fileSize ? (d.fileSize / 1024).toFixed(0) + ' KB' : '')}
+            📎 ${esc(d.uploadedByName || 'Unknown')} · ${isPaymentAdvice ? 'Generated payment advice' : isGeneratedInvoice ? 'Generated invoice' : (d.fileName ? esc(d.fileName) : 'No file') + ' · ' + (d.fileSize ? (d.fileSize / 1024).toFixed(0) + ' KB' : '')}${(isPaymentAdvice || isGeneratedInvoice) && d.notes ? ' · ' + esc(d.notes) : ''}
           </div>
         </div>
         <div style="display:flex;gap:4px;flex-shrink:0" onclick="event.stopPropagation()">
-          ${d.invoiceData ? `
+          ${isPaymentAdvice ? `
+            <button class="btn btn-sm btn-ghost btn-icon" onclick="viewSavedPaymentAdvice('${d.id}')" title="View / Print Payment Advice">🖨️</button>
+            <button class="btn btn-sm btn-ghost btn-icon" onclick="editSavedPaymentAdvice('${d.id}')" title="Edit Payment Advice">✏️</button>
+          ` : isGeneratedInvoice ? `
             <button class="btn btn-sm btn-ghost btn-icon" onclick="viewSavedInvoice('${d.id}')" title="View / Print Invoice">🖨️</button>
             <button class="btn btn-sm btn-ghost btn-icon" onclick="editSavedInvoice('${d.id}')" title="Edit Invoice">✏️</button>
           ` : `<button class="btn btn-sm btn-ghost btn-icon" onclick="viewDocument('${d.id}')" title="View">👁️</button>`}

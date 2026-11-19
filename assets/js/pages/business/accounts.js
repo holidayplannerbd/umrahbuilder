@@ -1439,3 +1439,273 @@ async function printCurrentInvoice() {
     setTimeout(doPrint, 200);
   }
 }
+
+/* ==================== PAYMENT ADVICE ==================== */
+const PAYMENT_ADVICE_FIELDS = {
+  invoiceNo: 'paInvoiceNo',
+  adviceNo: 'paAdviceNo',
+  date: 'paDate',
+  class: 'paClass',
+  travelDate: 'paTravelDate',
+  carrier: 'paCarrier',
+  issuedBy: 'paIssuedBy',
+  sector: 'paSector',
+  clientName: 'paClientName',
+  contactPerson: 'paContactPerson',
+  contactNo: 'paContactNo',
+  address: 'paAddress',
+  salesPerson: 'paSalesPerson',
+  creditPeriod: 'paCreditPeriod',
+  creditTo: 'paCreditTo',
+  clientCategory: 'paClientCategory',
+  fare: 'paFare',
+  taxes: 'paTaxes',
+  vatAit: 'paVatAit',
+  discount: 'paDiscount',
+  serviceCharges: 'paServiceCharges',
+  netBill: 'paNetBill',
+  invoiceAmount: 'paInvoiceAmount',
+  note: 'paNote'
+};
+
+function openPaymentAdviceModal(existing) {
+  const record = existing && existing.paymentAdviceData ? existing : null;
+  const data = record ? record.paymentAdviceData : {};
+  $('paId').value = record ? record.id : '';
+  Object.entries(PAYMENT_ADVICE_FIELDS).forEach(([key, id]) => {
+    const input = $(id);
+    if (input) input.value = data[key] == null ? '' : data[key];
+  });
+  [1, 2, 3].forEach(i => {
+    $(`paPaxName${i}`).value = data.paxNames?.[i - 1] || '';
+    const ticketInput = $(`paTicketNo${i}`);
+    if (ticketInput) ticketInput.value = data.ticketNos?.[i - 1] || '';
+  });
+  if (!record) {
+    $('paDate').value = today();
+    $('paAdviceNo').value = 'PA' + Date.now().toString().slice(-6);
+    $('paIssuedBy').value = window.__cachedSettings?.userName || '';
+  }
+  const title = document.querySelector('#paymentAdviceSetupModal .modal-head h2');
+  if (title) title.textContent = record ? `📄 Edit Payment Advice · ${data.adviceNo}` : '📄 Payment Advice / Credit Approval Form';
+  openModal('paymentAdviceSetupModal');
+}
+
+let _paymentAdviceSaving = false;
+async function savePaymentAdvice() {
+  if (_paymentAdviceSaving) return;
+  const adviceNo = $('paAdviceNo').value.trim();
+  const paxNames = [1, 2, 3].map(i => $(`paPaxName${i}`).value.trim());
+  if (!adviceNo || !paxNames.some(Boolean)) {
+    toast('Payment Advice No. and at least one Pax Name are required', 'error');
+    return;
+  }
+
+  const data = { adviceNo, paxNames, ticketNos: [1, 2].map(i => $(`paTicketNo${i}`).value.trim()) };
+  Object.entries(PAYMENT_ADVICE_FIELDS).forEach(([key, id]) => {
+    const input = $(id);
+    data[key] = input.type === 'number' ? (input.value === '' ? '' : Number(input.value)) : input.value.trim();
+  });
+  data.date = data.date || today();
+  const paxName = paxNames.find(Boolean);
+  const amount = data.invoiceAmount !== '' ? Number(data.invoiceAmount) : Number(data.netBill) || 0;
+  const editId = $('paId').value;
+  _paymentAdviceSaving = true;
+  showLoading('Saving Payment Advice...');
+  try {
+    if (typeof loadDocs === 'function') await loadDocs();
+    const existing = editId ? (docsCache || []).find(x => x.id === editId && x.paymentAdviceData) : null;
+    if (editId && !existing) {
+      toast('Payment Advice not found', 'error');
+      return;
+    }
+
+    const user = window.firebaseAuth?.currentUser;
+    const record = {
+      ...(existing || {}),
+      id: existing?.id || ('pa_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)),
+      type: 'paymentAdvice',
+      title: `Payment Advice ${adviceNo} · ${paxName}`,
+      vendorName: '',
+      packageName: '',
+      amount,
+      date: data.date,
+      notes: data.note || data.creditPeriod || '',
+      paymentAdviceData: data,
+      uploadedBy: existing?.uploadedBy || user?.uid || null,
+      uploadedByName: existing?.uploadedByName || data.issuedBy || user?.displayName || user?.email?.split('@')[0] || 'Unknown',
+      createdAt: existing?.createdAt || Date.now(),
+      updatedAt: Date.now()
+    };
+    if (existing) docsCache = docsCache.map(x => x.id === existing.id ? record : x);
+    else docsCache.push(record);
+    await saveDocs();
+    $('paId').value = record.id;
+    toast(existing ? '✅ Payment Advice updated in Documents' : '✅ Payment Advice saved to Documents');
+    if (document.getElementById('docList') && typeof renderDocuments === 'function') renderDocuments();
+    generatePaymentAdvicePreview(data);
+  } catch (e) {
+    toast('Payment Advice save failed: ' + e.message, 'error');
+  } finally {
+    hideLoading();
+    _paymentAdviceSaving = false;
+  }
+}
+
+function viewSavedPaymentAdvice(docId) {
+  const record = (docsCache || []).find(x => x.id === docId);
+  if (!record || !record.paymentAdviceData) { toast('Payment Advice not found', 'error'); return; }
+  document.getElementById('docViewModal')?.remove();
+  generatePaymentAdvicePreview(record.paymentAdviceData);
+}
+
+function editSavedPaymentAdvice(docId) {
+  const record = (docsCache || []).find(x => x.id === docId);
+  if (!record || !record.paymentAdviceData) { toast('Payment Advice not found', 'error'); return; }
+  document.getElementById('docViewModal')?.remove();
+  openPaymentAdviceModal(record);
+}
+
+function buildPaymentAdviceHtml(data, options = {}) {
+  const logoSrc = options.logoBase64 || options.logoUrl || getInvoiceLogoUrl();
+  const escText = value => esc(value || '');
+  const amount = value => value === '' || value == null ? '' : Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const border = 'border:1px solid #000;padding:6px 8px;font-size:12px;';
+  const line = (label, value, height = 26) => `<tr><td style="${border}width:31%;font-weight:bold;height:${height}px;">${label}</td><td style="${border}">${escText(value)}</td></tr>`;
+  const checked = (value, option) => value === option ? '[X] ' : '[ ] ';
+  const summary = [
+    ['Fare', data.fare], ['Taxes', data.taxes], ['VAT & AIT', data.vatAit],
+    ['Discount', data.discount], ['Service Charges', data.serviceCharges],
+    ['Net Bill', data.netBill], ['Invoice Amount', data.invoiceAmount]
+  ];
+  return `
+    <div style="font-family:Arial,sans-serif;color:#000;background:#fff;width:100%;max-width:194mm;min-height:277mm;margin:0 auto;padding:5mm;box-sizing:border-box;font-size:12px;display:flex;flex-direction:column;">
+      <div style="text-align:center;margin-bottom:12px;">
+        <img src="${logoSrc}" alt="Holiday Planner" style="max-width:82%;max-height:78px;object-fit:contain;" onerror="this.style.display='none'">
+        <div style="font-size:11px;line-height:1.4;margin-top:4px;">
+          Bashati Condominium, House # 15 (Flat No C/9-10) Road # 17, Banani, Dhaka-1213, Bangladesh<br>
+          Tel : +8802-222274554, 9820338, Email: holidayplanner2017@gmail.com
+        </div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:12px;">
+        <tr><td style="${border}width:50%;"><strong>Invoice No:</strong> ${escText(data.invoiceNo)}</td><td style="${border}text-align:right;"><strong>Payment Advice No:</strong> ${escText(data.adviceNo)}</td></tr>
+      </table>
+      <div style="text-align:center;border:1px solid #000;padding:8px;font-weight:bold;font-size:16px;margin-bottom:10px;">PAYMENT ADVICE / CREDIT APPROVAL FORM</div>
+      <div style="text-align:right;margin-bottom:8px;font-size:12px;"><strong>Date:</strong> ${escText(data.date)}</div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:10px;">
+        <tr>
+          <td style="width:62%;vertical-align:top;padding-right:5px;">
+            <table style="width:100%;border-collapse:collapse;">
+              <tr><td style="${border}width:22%;font-weight:bold;">Pax Name:</td><td style="${border}height:26px;">${escText(data.paxNames?.[0])}</td></tr>
+              <tr><td style="${border}"></td><td style="${border}height:26px;">${escText(data.paxNames?.[1])}</td></tr>
+              <tr><td style="${border}"></td><td style="${border}height:26px;">${escText(data.paxNames?.[2])}</td></tr>
+              <tr><td style="${border}font-weight:bold;">Ticket No:</td><td style="${border}height:26px;">${escText(data.ticketNos?.[0])}</td></tr>
+              <tr><td style="${border}"></td><td style="${border}height:26px;">${escText(data.ticketNos?.[1])}</td></tr>
+            </table>
+          </td>
+          <td style="vertical-align:top;">
+            <table style="width:100%;border-collapse:collapse;">
+              ${line('Class:', data.class)}
+              ${line('Travel Date:', data.travelDate)}
+              ${line('Carrier:', data.carrier)}
+              ${line('Issued By:', data.issuedBy)}
+            </table>
+          </td>
+        </tr>
+      </table>
+      <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
+        <tr>
+          <td style="width:58%;vertical-align:top;padding-right:8px;">
+            <table style="width:100%;border-collapse:collapse;">
+              ${line('Sector:', data.sector)}
+              ${line('Client Name:', data.clientName)}
+              ${line('Contact Person:', data.contactPerson)}
+              ${line('Contact No.:', data.contactNo)}
+              ${line('Address:', data.address, 42)}
+              ${line('Sales Person:', data.salesPerson)}
+            </table>
+            <table style="width:100%;border-collapse:collapse;margin-top:4px;">
+              <tr><td style="${border}width:31%;font-weight:bold;">Credit Period:</td><td style="${border}font-size:10px;">${checked(data.creditPeriod, '15 Days')}15 Days &nbsp; ${checked(data.creditPeriod, '30 Days')}30 Days &nbsp; ${checked(data.creditPeriod, 'Paid Mr-')}Paid Mr- ${escText(data.creditTo)}</td></tr>
+              <tr><td style="${border}font-weight:bold;">Client Category:</td><td style="${border}font-size:10px;">${checked(data.clientCategory, 'Personal')}Personal &nbsp; ${checked(data.clientCategory, 'Corp.')}Corp. &nbsp; ${checked(data.clientCategory, 'In-house')}In-house &nbsp; ${checked(data.clientCategory, 'General')}General</td></tr>
+            </table>
+            <div style="display:flex;margin-top:6px;min-height:78px;">
+              <strong style="padding:5px 6px 0 0;">Note:</strong>
+              <div style="border:1px solid #000;flex:1;padding:5px;">${escText(data.note)}</div>
+            </div>
+            <div style="font-weight:bold;margin-top:12px;">Signature:</div>
+          </td>
+          <td style="vertical-align:top;">
+            <table style="width:100%;border-collapse:collapse;">
+              <thead><tr><th style="${border}text-align:left;">Fare:</th><th style="${border}text-align:center;width:34%;">Amount</th></tr></thead>
+              <tbody>${summary.map(([label, value]) => `<tr><td style="${border}${label === 'Net Bill' || label === 'Invoice Amount' ? 'font-weight:bold;text-align:center;' : ''}">${label === 'Fare' ? '' : label === 'Taxes' ? 'Taxes:' : label === 'VAT & AIT' ? 'VAT & AIT' : label}</td><td style="${border}height:${label === 'Fare' || label === 'Taxes' ? 48 : 30}px;text-align:right;${label === 'Invoice Amount' ? 'font-weight:bold;' : ''}">${amount(value)}</td></tr>`).join('')}</tbody>
+            </table>
+          </td>
+        </tr>
+      </table>
+      <div style="margin-top:auto;padding:0 8px 0;">
+        <div style="display:flex;justify-content:space-between;">
+          <div style="width:20%;border-top:1px solid #000;"></div>
+          <div style="width:20%;border-top:1px solid #000;"></div>
+          <div style="width:20%;border-top:1px solid #000;"></div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+let _currentPaymentAdviceData = null;
+function generatePaymentAdvicePreview(data) {
+  closeModal('paymentAdviceSetupModal');
+  document.getElementById('paymentAdvicePreviewModal')?.remove();
+  _currentPaymentAdviceData = data;
+  document.getElementById('modalsContainer').insertAdjacentHTML('beforeend', `
+    <div class="modal-bg act" id="paymentAdvicePreviewModal" style="background:rgba(0,0,0,.7)">
+      <div class="modal" style="max-width:1000px;max-height:95vh;padding:0">
+        <div class="modal-head" style="background:#f8f9fa;border-bottom:1px solid #ddd;padding:10px 20px;">
+          <h2 style="font-size:16px;margin:0;">📄 Payment Advice · ${esc(data.adviceNo)}</h2>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-primary btn-sm" onclick="printCurrentPaymentAdvice()">🖨️ Print / Save PDF</button>
+            <button class="btn btn-secondary btn-sm" onclick="this.closest('.modal-bg').remove()">Close</button>
+          </div>
+        </div>
+        <div class="modal-body" style="background:#f1f3f5;padding:20px;max-height:calc(95vh - 64px);overflow:auto;">${buildPaymentAdviceHtml(data)}</div>
+      </div>
+    </div>
+  `);
+}
+
+async function printCurrentPaymentAdvice() {
+  const data = _currentPaymentAdviceData;
+  if (!data) return;
+  const logoBase64 = await getInvoiceLogoBase64();
+  const html = buildPaymentAdviceHtml(data, { logoBase64: logoBase64 || getInvoiceLogoUrl() });
+  document.getElementById('paymentAdvicePrintFrame')?.remove();
+  const frame = document.createElement('iframe');
+  frame.id = 'paymentAdvicePrintFrame';
+  frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;';
+  document.body.appendChild(frame);
+  const doc = frame.contentDocument || frame.contentWindow.document;
+  doc.open();
+  doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Payment Advice ${esc(data.adviceNo)}</title>
+    <style>@page{size:A4 portrait;margin:8mm}html,body{margin:0;padding:0;background:#fff;color:#000}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}table{break-inside:avoid}img{max-width:100%;filter:grayscale(1) contrast(1.25)}</style>
+    </head><body>${html}</body></html>`);
+  doc.close();
+  let printed = false;
+  const doPrint = () => {
+    if (printed) return;
+    printed = true;
+    frame.contentWindow.focus();
+    setTimeout(() => {
+      frame.contentWindow.print();
+      setTimeout(() => frame.remove(), 1500);
+    }, 200);
+  };
+  const img = doc.querySelector('img');
+  if (img && !img.complete) {
+    img.onload = doPrint;
+    img.onerror = doPrint;
+    setTimeout(doPrint, 2500);
+  } else {
+    setTimeout(doPrint, 200);
+  }
+}
