@@ -1667,8 +1667,12 @@ Cancellation within 24 hours: No refund</textarea></div>
           <input type="text" id="invClientRef" placeholder="Booking / PNR / Ref">
         </div>
         <div class="field">
-          <label>Paid Amount (৳, optional)</label>
-          <input type="number" id="invPaid" min="0" placeholder="0">
+          <label>Payment Received Now (৳)</label>
+          <input type="number" id="invPaid" min="0" step="0.01" placeholder="0" oninput="updateInvoiceSummary()">
+        </div>
+        <div class="field">
+          <label>Payment Method</label>
+          <select id="invPaymentMethod"><option>Cash</option><option>Bank Transfer</option><option>bKash</option><option>Nagad</option><option>Cheque</option><option>Other</option></select>
         </div>
       </div>
 
@@ -1686,6 +1690,19 @@ Cancellation within 24 hours: No refund</textarea></div>
 
       <div id="invoiceItemsList" style="display:flex; flex-direction:column; gap:10px;">
         <!-- Rows will be added here dynamically -->
+      </div>
+
+      <input type="hidden" id="invPaymentId">
+      <input type="hidden" id="invPackageIds">
+      <div id="invoiceCustomerSummary" style="display:none;margin-top:16px;padding:14px;background:linear-gradient(135deg,var(--primary-bg),var(--card));border:1px solid var(--primary-light);border-radius:12px">
+        <div style="font-size:12px;font-weight:800;margin-bottom:10px">Customer Invoice Summary</div>
+        <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">
+          <div><div style="font-size:10px;color:var(--text-3)">Gross Total</div><b id="invGrossTotal">৳0</b></div>
+          <div><div style="font-size:10px;color:var(--text-3)">Paid So Far</div><b id="invPaidSoFar" style="color:var(--green)">৳0</b></div>
+          <div><div style="font-size:10px;color:var(--text-3)">Due Before Payment</div><b id="invDueBefore" style="color:var(--red)">৳0</b></div>
+          <div><div style="font-size:10px;color:var(--text-3)">Due After Payment</div><b id="invDueAfter" style="color:var(--red)">৳0</b></div>
+        </div>
+        <div id="invPackageServices" style="font-size:11px;color:var(--text-2);margin-top:8px"></div>
       </div>
 
     </div>

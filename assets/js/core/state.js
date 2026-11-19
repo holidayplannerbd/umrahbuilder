@@ -59,7 +59,7 @@ let analyticsFilterFrom = null;
 let analyticsFilterTo = null;
 
 /* ==================== FOLLOW-UP ==================== */
-let currentFollowTab = 'package';
+let currentFollowTab = 'lead';
 
 /* ⭐ FOLLOW-UP ADVANCED STATE */
 let followFilterAssigned = 'all';

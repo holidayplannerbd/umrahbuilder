@@ -1020,6 +1020,160 @@ function escapeAttr(s) {
     .replace(/>/g, '&gt;');
 }
 
+let invoiceCustomerState = { customerId: '', packageIds: [], paid: 0 };
+
+function getInvoiceCustomerPackages(customer) {
+  if (!customer) return [];
+  return (STORE.packages || []).filter(p =>
+    p.status !== 'Cancelled' &&
+    ((p.customerId && String(p.customerId) === String(customer.id)) ||
+     (p.customerPhone && customer.phone && String(p.customerPhone) === String(customer.phone)))
+  );
+}
+
+function getInvoiceCustomerPaid(customer, packages, ignoredPaymentId = '') {
+  const payments = customer?.payments || [];
+  const ledgerPaid = payments.reduce((sum, payment) =>
+    payment.id === ignoredPaymentId ? sum : sum + Math.max(0, Number(payment.amount || 0)), 0);
+  const unrecordedAdvances = packages.reduce((sum, pkg) => {
+    const advance = Math.max(0, Number(pkg.advanceAmount || 0));
+    const recorded = payments.some(payment =>
+      String(payment.packageId) === String(pkg.id) && payment.isAdvance
+    );
+    return sum + (recorded ? 0 : advance);
+  }, 0);
+  return ledgerPaid + unrecordedAdvances;
+}
+
+function getInvoicePackageItemNames(items, category) {
+  return (items || []).map(item => {
+    if (category === 'Hotel') return item.name || item.hotelName || '';
+    if (category === 'Flight') return [item.airline, item.flightNo, item.sector || item.route].filter(Boolean).join(' ');
+    if (category === 'Transfer') return [item.from, item.to, item.vehicle].filter(Boolean).join(' - ');
+    if (category === 'Visa') return item.name || item.type || item.visaType || 'Visa';
+    if (category === 'Ziyarah') return item.name || item.route || item.vehicle || 'Ziyarah';
+    return item.name || item.serviceName || item.title || '';
+  }).filter(Boolean).join(', ');
+}
+
+function buildPackageInvoiceRows(customer, packages) {
+  const rows = [];
+  const categories = [
+    { label: 'Hotel', amount: 'hotelCost', items: pkg => [...(pkg.makkahHotels || []), ...(pkg.madinahHotels || [])] },
+    { label: 'Flight', amount: 'flightCost', items: pkg => pkg.flights || [] },
+    { label: 'Transfer', amount: 'transportCost', items: pkg => pkg.transports || [] },
+    { label: 'Visa', amount: 'visaCost', items: pkg => pkg.visas || [] },
+    { label: 'Other Services', amount: 'serviceCost', items: pkg => pkg.services || [] },
+    { label: 'Ziyarah', amount: 'ziyarahTransportCost', items: pkg => pkg.ziyarahTransport || [] }
+  ];
+
+  packages.forEach(pkg => {
+    let componentTotal = 0;
+    categories.forEach(category => {
+      const amount = Number(pkg[category.amount] || 0);
+      const items = category.items(pkg);
+      componentTotal += amount;
+      if (amount || items.length) {
+        rows.push({
+          type: 'package',
+          name: customer.customerName || '',
+          ref: `${pkg.name || 'Package'} · ${category.label}`,
+          detail: getInvoicePackageItemNames(items, category.label) || `${items.length || 1} ${category.label.toLowerCase()} item(s)`,
+          date: pkg.checkIn || pkg.start || '',
+          amount
+        });
+      }
+    });
+
+    const adjustment = Number(pkg.grandTotal || 0) - componentTotal;
+    if (Math.abs(adjustment) > 0.01) {
+      const adjustmentDetails = [
+        Number(pkg.vatAmount || 0) ? `VAT ${fmt(pkg.vatAmount)}` : '',
+        Number(pkg.serviceFeeAmount || 0) ? `Service fee ${fmt(pkg.serviceFeeAmount)}` : '',
+        Number(pkg.markupAmount || 0) ? `Markup ${fmt(pkg.markupAmount)}` : '',
+        Number(pkg.discountAmount || 0) ? `Discount -${fmt(pkg.discountAmount)}` : ''
+      ].filter(Boolean).join(', ');
+      rows.push({
+        type: 'package',
+        name: customer.customerName || '',
+        ref: `${pkg.name || 'Package'} · Adjustments`,
+        detail: adjustmentDetails || 'Package price adjustment',
+        date: pkg.checkIn || pkg.start || '',
+        amount: adjustment
+      });
+    }
+
+    if (!categories.some(category => Number(pkg[category.amount] || 0) || category.items(pkg).length) &&
+        Math.abs(adjustment) <= 0.01) {
+      rows.push({
+        type: 'package',
+        name: customer.customerName || '',
+        ref: pkg.name || 'Package',
+        detail: pkg.refNo || 'Package services',
+        date: pkg.checkIn || pkg.start || '',
+        amount: Number(pkg.grandTotal || 0)
+      });
+    }
+  });
+  return rows;
+}
+
+function updateInvoiceSummary() {
+  const summary = $('invoiceCustomerSummary');
+  if (!summary) return;
+  const customerId = $('invCustomerSelect')?.value || '';
+  const hasCustomer = customerId && String(invoiceCustomerState.customerId) === String(customerId);
+  const total = [...document.querySelectorAll('#invoiceItemsList > .inv-row')]
+    .reduce((sum, row) => sum + readInvoiceRow(row).amount, 0);
+  const paidSoFar = hasCustomer ? invoiceCustomerState.paid : 0;
+  const rawPaidNow = $('invPaid')?.value.trim() || '';
+  const paidNow = rawPaidNow ? Number(rawPaidNow) : 0;
+  const dueBefore = Math.max(0, total - paidSoFar);
+
+  summary.style.display = hasCustomer ? 'block' : 'none';
+  if (!hasCustomer) return;
+  $('invGrossTotal').textContent = fmt(total);
+  $('invPaidSoFar').textContent = fmt(paidSoFar);
+  $('invDueBefore').textContent = fmt(dueBefore);
+  $('invDueAfter').textContent = fmt(Math.max(0, dueBefore - paidNow));
+  $('invPackageServices').textContent = invoiceCustomerState.services || '';
+}
+
+function loadInvoiceCustomer(custId, populateRows = true) {
+  const customer = (STORE.customers || []).find(c => String(c.id) === String(custId));
+  if (!customer) {
+    invoiceCustomerState = { customerId: '', packageIds: [], paid: 0 };
+    $('invPackageIds').value = '';
+    $('invoiceCustomerSummary').style.display = 'none';
+    return;
+  }
+
+  const packages = getInvoiceCustomerPackages(customer);
+  invoiceCustomerState = {
+    customerId: String(customer.id),
+    packageIds: packages.map(pkg => pkg.id),
+    paid: getInvoiceCustomerPaid(customer, packages),
+    services: packages.map(pkg => `${pkg.name || 'Package'}: ${['Hotel', 'Flight', 'Transfer', 'Visa', 'Other Services', 'Ziyarah']
+      .filter((_, index) => {
+        const keys = ['hotelCost', 'flightCost', 'transportCost', 'visaCost', 'serviceCost', 'ziyarahTransportCost'];
+        const arrays = [pkg.makkahHotels?.length || pkg.madinahHotels?.length, pkg.flights?.length, pkg.transports?.length, pkg.visas?.length, pkg.services?.length, pkg.ziyarahTransport?.length];
+        return Number(pkg[keys[index]] || 0) || arrays[index];
+      }).join(', ')}`).join(' · ')
+  };
+  $('invPackageIds').value = JSON.stringify(invoiceCustomerState.packageIds);
+  $('invCustomerName').value = customer.customerName || '';
+
+  if (populateRows) {
+    $('invoiceItemsList').innerHTML = '';
+    invoiceRowCounter = 0;
+    const rows = buildPackageInvoiceRows(customer, packages);
+    if (rows.length) rows.forEach(row => addInvoiceItemRow('package', row));
+    else addInvoiceItemRow('flight');
+    $('invServiceType').value = packages.length ? 'Umrah Package' : '';
+  }
+  updateInvoiceSummary();
+}
+
 /* ১. ইনভয়েস মডাল ওপেন করা (নতুন বা এডিট) */
 function openCreateInvoiceModal(existing) {
   const inv = existing && existing.invoiceData ? existing : null;
@@ -1031,11 +1185,13 @@ function openCreateInvoiceModal(existing) {
   $('invServiceType').value = d.serviceType || '';
   $('invIssuedBy').value = d.issuedBy || window.__cachedSettings?.userName || '';
   if ($('invClientRef')) $('invClientRef').value = d.clientRef || '';
-  if ($('invPaid')) $('invPaid').value = d.paid || '';
+  if ($('invPaid')) $('invPaid').value = '';
+  if ($('invPaymentMethod')) $('invPaymentMethod').value = d.paymentMethod || 'Cash';
+  if ($('invPaymentId')) $('invPaymentId').value = '';
 
   const select = $('invCustomerSelect');
   select.innerHTML = '<option value="">-- Select Existing Customer --</option>' +
-    (STORE.customers || []).map(c => `<option value="${c.id}">${esc(c.customerName)} · ${esc(c.phone || '')}</option>`).join('');
+    (STORE.customers || []).map(c => `<option value="${c.id}">${esc(c.customerName)}${c.phone ? ` (${esc(c.phone)})` : ''}</option>`).join('');
   select.value = d.customerId || '';
 
   /* Package name suggestions */
@@ -1052,7 +1208,20 @@ function openCreateInvoiceModal(existing) {
   if (d.rows && d.rows.length) {
     d.rows.forEach(r => addInvoiceItemRow(r.type || 'flight', r));
   } else {
-    addInvoiceItemRow('flight');
+    if (select.value) loadInvoiceCustomer(select.value);
+    else addInvoiceItemRow('flight');
+  }
+  if (select.value) {
+    loadInvoiceCustomer(select.value, false);
+    if (inv && d.paymentTrackingVersion !== 2) {
+      invoiceCustomerState.paid = Math.max(invoiceCustomerState.paid, Number(d.paid) || 0);
+      updateInvoiceSummary();
+    }
+  }
+  else {
+    invoiceCustomerState = { customerId: '', packageIds: [], paid: 0 };
+    $('invPackageIds').value = '';
+    updateInvoiceSummary();
   }
 
   const title = document.querySelector('#invoiceSetupModal .modal-head h2');
@@ -1063,9 +1232,19 @@ function openCreateInvoiceModal(existing) {
 
 /* ২. কাস্টমার সিলেক্ট করলে নাম বসানো */
 function onInvoiceCustomerChange(custId) {
-  if (!custId) return;
-  const c = STORE.customers.find(x => String(x.id) === String(custId));
-  if (c) $('invCustomerName').value = c.customerName;
+  $('invPaymentId').value = '';
+  if (custId) {
+    loadInvoiceCustomer(custId);
+  } else {
+    invoiceCustomerState = { customerId: '', packageIds: [], paid: 0 };
+    $('invPackageIds').value = '';
+    $('invCustomerName').value = '';
+    $('invServiceType').value = '';
+    $('invoiceItemsList').innerHTML = '';
+    invoiceRowCounter = 0;
+    addInvoiceItemRow('flight');
+    $('invoiceCustomerSummary').style.display = 'none';
+  }
 }
 
 /* ৩. নতুন সার্ভিস রো যোগ করা */
@@ -1078,6 +1257,7 @@ function addInvoiceItemRow(type, values) {
   const html = `<div id="${rowId}" class="inv-row" data-type="${type}" style="background:var(--bg-2); padding:10px; border-radius:8px; border:1px solid var(--border);"></div>`;
   $('invoiceItemsList').insertAdjacentHTML('beforeend', html);
   renderInvoiceRow(rowId, type, values);
+  updateInvoiceSummary();
 }
 
 function renderInvoiceRow(rowId, type, values) {
@@ -1108,9 +1288,9 @@ function renderInvoiceRow(rowId, type, values) {
       ${fieldsHtml}
       <div class="field" style="margin:0">
         <label style="font-size:10px">Amount (৳)</label>
-        <input type="number" class="inv-amount" placeholder="0" value="${values.amount ? escapeAttr(values.amount) : ''}">
+        <input type="number" class="inv-amount" placeholder="0" value="${values.amount ? escapeAttr(values.amount) : ''}" oninput="updateInvoiceSummary()">
       </div>
-      <button class="btn btn-danger btn-sm" style="height:36px; margin-bottom:1px;" onclick="document.getElementById('${rowId}').remove()">✕</button>
+      <button class="btn btn-danger btn-sm" style="height:36px; margin-bottom:1px;" onclick="document.getElementById('${rowId}').remove();updateInvoiceSummary()">✕</button>
     </div>
   `;
 }
@@ -1130,6 +1310,7 @@ function changeInvoiceRowType(rowId, newType) {
   if (!row) return;
   const values = readInvoiceRow(row);
   renderInvoiceRow(rowId, newType, values);
+  updateInvoiceSummary();
 }
 
 /* ৪. সেভ (Documents এ) এবং প্রিভিউ তৈরি */
@@ -1155,39 +1336,139 @@ async function saveAndPrintInvoice() {
   }
 
   const editId = $('invId').value;
-  if (typeof loadDocs === 'function') await loadDocs();
-  const existing = editId ? (docsCache || []).find(x => x.id === editId) : null;
-
   const date = $('invDate').value || today();
   const usedTypes = [...new Set(rows.map(r => INVOICE_ITEM_TYPES[r.type]?.label || r.type))];
   const serviceType = $('invServiceType').value.trim() || usedTypes.join(', ');
   const issuedBy = $('invIssuedBy').value || 'Agent';
   const clientRef = $('invClientRef')?.value.trim() || '';
-  const paid = Number($('invPaid')?.value) || 0;
+  const rawPaidNow = $('invPaid')?.value.trim() || '';
+  const paidNow = rawPaidNow ? Number(rawPaidNow) : 0;
   const customerId = $('invCustomerSelect').value || '';
-
   const total = rows.reduce((s, r) => s + r.amount, 0);
-  const invoiceNo = existing?.invoiceData?.invoiceNo || ('I' + Date.now().toString().slice(-6));
-  const amountInWords = numberToWords(Math.round(total)) + ' TAKA ONLY';
-
-  const data = {
-    invoiceNo, date, customerId, customerName, serviceType, issuedBy, clientRef,
-    rows, total, paid, due: Math.max(0, total - paid), amountInWords
-  };
+  if (!Number.isFinite(total) || total < 0) {
+    toast('Invoice total must be a valid non-negative amount', 'error');
+    return;
+  }
+  if (!Number.isFinite(paidNow) || paidNow < 0) {
+    toast('Payment amount must be zero or more', 'error');
+    return;
+  }
+  if (paidNow > 0 && !customerId) {
+    toast('Select an existing customer to save a payment', 'error');
+    return;
+  }
 
   _invoiceSaving = true;
   showLoading('Saving invoice...');
+  let paymentSaved = false;
   try {
+    if (typeof loadDocs === 'function') await loadDocs();
+    const existing = editId ? (docsCache || []).find(x => x.id === editId) : null;
+    if (editId && !existing) throw new Error('Invoice not found. Reload Documents and try again.');
+
     const user = window.firebaseAuth?.currentUser;
+    const recordId = existing?.id || editId || ('inv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6));
+    const invoiceNo = existing?.invoiceData?.invoiceNo || ('I' + Date.now().toString().slice(-6));
+    const paymentId = paidNow > 0
+      ? ($('invPaymentId').value || ('invpay_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7)))
+      : '';
+    if (paidNow > 0) {
+      $('invPaymentId').value = paymentId;
+      $('invId').value = recordId;
+    }
+
+    const customer = customerId
+      ? (STORE.customers || []).find(c => String(c.id) === String(customerId))
+      : null;
+    if (customerId && !customer) throw new Error('Selected customer could not be found. Please reselect the customer.');
+
+    const packages = customer ? getInvoiceCustomerPackages(customer) : [];
+    const payments = customer?.payments || [];
+    const alreadySavedPayment = payments.find(payment => payment.id === paymentId);
+    let paidBefore = customer ? getInvoiceCustomerPaid(customer, packages, paymentId) : 0;
+    let ledgerChanged = false;
+    if (customer && existing?.invoiceData?.paymentTrackingVersion !== 2) {
+      const legacyPaid = Math.max(0, Number(existing?.invoiceData?.paid) || 0);
+      const legacyPaymentId = `invlegacy_${recordId}`;
+      const hasLegacyPayment = payments.some(payment => payment.id === legacyPaymentId);
+      const legacyDifference = Math.max(0, legacyPaid - paidBefore);
+      if (legacyDifference > 0.01 && !hasLegacyPayment) {
+        if (!customer.payments) customer.payments = [];
+        customer.payments.push({
+          id: legacyPaymentId,
+          amount: legacyDifference,
+          date: existing.invoiceData.date || today(),
+          method: existing.invoiceData.paymentMethod || 'Other',
+          reference: invoiceNo,
+          notes: `Imported previous payment from invoice ${invoiceNo}`,
+          invoiceId: recordId,
+          packageId: null,
+          isAdvance: false,
+          isInvoiceOpeningBalance: true,
+          createdAt: existing.createdAt || Date.now()
+        });
+        paidBefore += legacyDifference;
+        ledgerChanged = true;
+      }
+    }
+    const dueBefore = Math.max(0, total - paidBefore);
+    if (paidNow > dueBefore + 0.01) {
+      throw new Error(`Payment exceeds the current due of ${fmt(dueBefore)}.`);
+    }
+
+    let paid = paidBefore;
+    if (paidNow > 0) {
+      if (!customer.payments) customer.payments = [];
+      const payment = {
+        ...(alreadySavedPayment || {}),
+        id: paymentId,
+        amount: paidNow,
+        date: today(),
+        method: $('invPaymentMethod')?.value || 'Cash',
+        reference: invoiceNo,
+        notes: `Invoice ${invoiceNo}`,
+        invoiceId: recordId,
+        packageId: null,
+        isAdvance: false,
+        createdAt: alreadySavedPayment?.createdAt || Date.now()
+      };
+      const paymentIndex = customer.payments.findIndex(item => item.id === paymentId);
+      if (paymentIndex >= 0) customer.payments[paymentIndex] = payment;
+      else customer.payments.push(payment);
+      customer.updatedAt = Date.now();
+      ledgerChanged = true;
+    }
+    if (ledgerChanged) {
+      customer.updatedAt = Date.now();
+      await dbSave(STORES.customers, customer);
+      paymentSaved = true;
+      STORE.customers = await dbGetAll(STORES.customers);
+      const savedCustomer = STORE.customers.find(c => String(c.id) === String(customerId));
+      if (!savedCustomer) throw new Error('Customer ledger was updated, but the customer record could not be reloaded.');
+      paid = getInvoiceCustomerPaid(savedCustomer, packages);
+    }
+    if (!customer && existing?.invoiceData?.paymentTrackingVersion !== 2) {
+      paid = Math.max(0, Number(existing?.invoiceData?.paid) || 0);
+    }
+
+    const packageIds = customer
+      ? packages.map(pkg => pkg.id)
+      : (invoiceCustomerState.packageIds || []);
+    const amountInWords = numberToWords(Math.round(total)) + ' TAKA ONLY';
+    const data = {
+      invoiceNo, date, customerId, packageIds, customerName, serviceType, issuedBy, clientRef,
+      rows, total, paid, due: Math.max(0, total - paid), amountInWords,
+      paymentMethod: paidNow > 0 ? ($('invPaymentMethod')?.value || 'Cash') : (existing?.invoiceData?.paymentMethod || ''),
+      lastPaymentAmount: paidNow,
+      paymentTrackingVersion: 2
+    };
+
     let uploaderName = issuedBy;
-    try {
-      const profile = await dbGetUserProfile();
-      uploaderName = profile?.name || user?.displayName || user?.email?.split('@')[0] || issuedBy;
-    } catch (e) { /* ignore */ }
+    uploaderName = window.__cachedSettings?.userName || user?.displayName || user?.email?.split('@')[0] || issuedBy;
 
     const record = {
       ...(existing || {}),
-      id: existing?.id || ('inv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)),
+      id: recordId,
       type: 'bill',
       title: `Invoice ${invoiceNo} · ${customerName}`,
       vendorName: '',
@@ -1209,17 +1490,25 @@ async function saveAndPrintInvoice() {
     }
     await saveDocs();
     $('invId').value = record.id;
+    $('invPaymentId').value = '';
+    $('invPaid').value = '';
+    if (customer) {
+      const savedCustomer = STORE.customers.find(c => String(c.id) === String(customerId));
+      invoiceCustomerState.paid = savedCustomer ? getInvoiceCustomerPaid(savedCustomer, packages) : paid;
+      updateInvoiceSummary();
+    }
     hideLoading();
     toast(existing ? '✅ Invoice updated in Documents' : '✅ Invoice saved to Documents → Customer Bill');
     if (document.getElementById('docList') && typeof renderDocuments === 'function') renderDocuments();
+    generateInvoicePreview(data);
   } catch (e) {
     hideLoading();
-    toast('Invoice save failed: ' + e.message, 'error');
+    toast(paymentSaved
+      ? `Payment was recorded, but invoice save failed: ${e.message}. Do not enter the payment again.`
+      : 'Invoice save failed: ' + e.message, 'error');
   } finally {
     _invoiceSaving = false;
   }
-
-  generateInvoicePreview(data);
 }
 
 /* Documents থেকে সেভ করা ইনভয়েস আবার দেখা / প্রিন্ট */

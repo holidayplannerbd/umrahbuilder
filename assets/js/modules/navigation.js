@@ -86,7 +86,7 @@ async function nav(page, el) {
   if (page === 'dashboard') renderDashboard();
   if (page === 'analytics') renderAnalytics();
   if (page === 'packages') renderPackages();
-  if (page === 'followups') renderFollowups();
+  if (page === 'followups') switchFollowTab('lead');
   if (page === 'makkah') renderHotelsTable('makkah');
   if (page === 'madinah') renderHotelsTable('madinah');
   if (page === 'flights') renderFlightsTable();
