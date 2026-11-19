@@ -412,12 +412,14 @@ function getHotelMasterRoomRate(cityType, hotelId, roomType) {
 }
 
 function getHotelRoomVendorRate(cityType, hotel, room) {
+  const manualRate = parseHotelRate(room?.manualVendorRate);
+  if (manualRate > 0) return manualRate;
   const roomType = normalizeHotelRoomType(room.type);
   return getHotelMasterRoomRate(cityType, hotel.hotelId, roomType);
 }
 
 function getHotelVendorRateHint(cityType, hotel, room) {
-  if (getHotelMasterRoomRate(cityType, hotel.hotelId, room.type) > 0) return '';
+  if (getHotelRoomVendorRate(cityType, hotel, room) > 0) return '';
   const masterList = cityType === 'makkah' ? STORE.makkahHotels : STORE.madinahHotels;
   const master = masterList.find(item => String(item.id) === String(hotel.hotelId));
   return `Add ${room.type} room rate for ${hotel.name || master?.name || 'this hotel'} in Hotel section.`;

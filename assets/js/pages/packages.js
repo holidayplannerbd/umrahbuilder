@@ -194,6 +194,7 @@ async function viewPackage(id) {
   currentViewPackageId = id;
 
   const paxTotal = (p.paxAdult || 0) + (p.paxChild || 0);
+  const visaPaxTotal = Number(p.paxAdult || 0) + Number(p.paxChild || 0) + Number(p.paxInfant || 0);
   const cls = (p.status || 'draft').toLowerCase().replace(/\s+/g, '-');
   const ownerName = getPackageOwnerName(p);
 
@@ -621,7 +622,7 @@ async function viewPackage(id) {
         ${(p.ziyarahTransport && p.ziyarahTransport.length) ? sec('★ Ziyarah Transport', p.ziyarahTransport, t => simpleRow('🚐', t.name || 'Ziyarah', CAR_SEATERS[t.car]?.label || t.car, (Number(t.sellPrice ?? t.price) || 0) * (t.cars || 1))) : ''}
         ${sec('Flights', p.flights || [], flightRow)}
         ${sec('▣ Transports', p.transports || [], transportRow)}
-        ${sec('Visa', p.visas || [], v => simpleRow('▤', v.name, '', (v.priceAdult || v.price || 0) * ((p.paxAdult || 0) + (p.paxChild || 0) + (p.paxInfant || 0))))}
+        ${sec('Visa', p.visas || [], v => simpleRow('▤', v.name, '', Number(v.priceAdult || v.price || 0) * visaPaxTotal))}
         ${sec('Services', p.services || [], s => simpleRow('▦', s.name, '', (s.price || 0) * (s.priceType === 'per_group' ? 1 : paxTotal)))}
         ${sec('📅 Itinerary', itineraryHtml ? [1] : [], () => itineraryHtml)}
         ${sec('✅ Inclusions', inclusionsHtml ? [1] : [], () => inclusionsHtml)}

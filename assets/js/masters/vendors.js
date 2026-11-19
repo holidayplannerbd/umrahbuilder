@@ -410,7 +410,7 @@ function getReadableItemName(item, category) {
   return item.name || item.title || '—';
 }
 
-function getPackageVendorItemCost(pkg, item, category) {
+function getPackageVendorItemCost(pkg, item, category, vendorId = item?.vendorId) {
   if (!pkg || !item) return 0;
 
   const paxAdult = Number(pkg.paxAdult || 0);
@@ -426,10 +426,26 @@ function getPackageVendorItemCost(pkg, item, category) {
     return Math.max(0, vendorPer * Math.max(1, Number(item.currentMultiplier) || 1));
   }
   if (category === 'visa') {
+    const vendor = STORE.vendors.find(candidate => String(candidate.id) === String(vendorId));
+    const itemName = normalizeHotelName(item.name);
+    const vendorVisa = itemName
+      ? [...(vendor?.items || []), ...(vendor?.visas || [])]
+          .find(rate => normalizeHotelName(rate.name) === itemName)
+      : null;
+    const vendorRate = field => Number(
+      vendorVisa?.[`${field}Cost`] !== undefined
+        ? vendorVisa[`${field}Cost`]
+        : vendorVisa?.[`price${field[0].toUpperCase()}${field.slice(1)}`] || 0
+    ) || 0;
+    const hasVendorRates = ['adult', 'child', 'infant'].some(field => vendorRate(field) > 0);
+    const rateAdult = hasVendorRates ? vendorRate('adult') : Number(item.costAdult || 0);
+    const rateChild = hasVendorRates ? vendorRate('child') : Number(item.costChild || 0);
+    const rateInfant = hasVendorRates ? vendorRate('infant') : Number(item.costInfant || 0);
+
     return Math.max(0,
-      Number(item.costAdult || 0) * paxAdult +
-      Number(item.costChild || 0) * paxChild +
-      Number(item.costInfant || 0) * paxInfant
+      rateAdult * paxAdult +
+      rateChild * paxChild +
+      rateInfant * paxInfant
     );
   }
   if (category === 'service') {
@@ -564,7 +580,7 @@ function getPackageVendorItemLedger(pkg) {
       const item = items[itemIndex];
       const itemName = getReadableItemName(item, key);
       const paid = getVendorItemPaid(pkg, vendorId, key, item, itemIndex);
-      const cost = getPackageVendorItemCost(pkg, item, key);
+      const cost = getPackageVendorItemCost(pkg, item, key, vendorId);
       assignedCost += cost;
       addEntry(vendorId, { category: key, itemName, cost, paid });
     });
@@ -968,7 +984,7 @@ function refreshVendorPaymentPackageOptions(vendorId, selectedId = null) {
       if (config) {
         const assignedItems = (pkg[config.items] || []).filter(item => String(item.vendorId || '') === String(vendorId));
         hasAssignedItem = assignedItems.length > 0;
-        categoryCost = assignedItems.reduce((sum, item) => sum + getPackageVendorItemCost(pkg, item, category), 0);
+        categoryCost = assignedItems.reduce((sum, item) => sum + getPackageVendorItemCost(pkg, item, category, vendorId), 0);
         if (!hasAssignedItem && (vendor?.payments || []).some(payment =>
           String(payment.packageId) === String(pkg.id) && payment.category === category
         )) {
@@ -1300,7 +1316,7 @@ function updateVendorPaymentSummary() {
   if ($('vpDue')) $('vpDue').textContent = fmt(remainingDue);
 
   const amtInput = $('vpAmount');
-  if (amtInput && !amtInput.dataset.touched && remainingDue > 0) {
+  if (amtInput && !amtInput.dataset.touched) {
     amtInput.value = remainingDue;
   }
 }
@@ -1442,7 +1458,7 @@ function updateVendorItemAllocation(p, category) {
   source.forEach(item => {
     if (String(item.vendorId || '') === String(vendorId) || !item.vendorId) {
       const displayName = getReadableItemName(item, category);
-      const cost = getPackageVendorItemCost(p, item, category);
+      const cost = getPackageVendorItemCost(p, item, category, vendorId);
       const itemIndex = source.indexOf(item);
       const paid = getVendorItemPaid(p, vendorId, category, item, itemIndex);
       const due = Math.max(0, cost - paid);

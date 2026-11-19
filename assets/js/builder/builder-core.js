@@ -270,7 +270,7 @@ async function editPackage(id) {
 async function savePackage() {
   if (!isAdmin()) {
     if (typeof toast === 'function') { toast('❌ আপনি Package save করতে পারবেন না', 'error'); }
-    return;
+    return false;
   }
 
   clearAllErrors();
@@ -287,7 +287,7 @@ async function savePackage() {
   const ci = strVal('pkgCheckIn');
   const co = strVal('pkgCheckOut');
   if (ci && co && new Date(co) < new Date(ci)) { setError('pkgCheckOut', 'Invalid date'); hasError = true; }
-  if (hasError) { toast('Fix red fields', 'error'); return; }
+  if (hasError) { toast('Fix red fields', 'error'); return false; }
 
   showLoading('Saving package...');
   try {
@@ -295,7 +295,7 @@ async function savePackage() {
 
     let customerId = null;
     if (custName) {
-      let existing = custPhone ? STORE.customers.find(c => c.phone === custPhone) : null;
+      let existing = custPhone ? STORE.customers.find(c => String(c.phone || '') === String(custPhone)) : null;
       if (!existing) existing = STORE.customers.find(c => c.customerName === custName);
 
       if (existing) {
@@ -363,9 +363,11 @@ async function savePackage() {
 
     toast(editingPackageId ? '✅ Package updated' : '✅ Package saved');
     editingPackageId = null;
+    return true;
   } catch (e) {
     hideLoading();
     toast('Save failed: ' + e.message, 'error');
+    return false;
   }
 }
 

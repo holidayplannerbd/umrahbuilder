@@ -258,7 +258,10 @@
         <div>
           <div class="quick-card">
             <h4>⚡ Quick Start</h4><p>Start with a pre-built template to save time.</p>
-            <button class="btn btn-primary btn-sm" onclick="openBuilder()">✨ Create New Package</button>
+            <div class="quick-actions">
+              <button class="btn btn-secondary btn-sm" onclick="openAutoPackageModal()">⚡ Auto Create</button>
+              <button class="btn btn-primary btn-sm" onclick="openBuilder()">✨ Create New Package</button>
+            </div>
           </div>
           <div class="content-card">
             <div class="content-head"><h3>🎯 Templates</h3></div>
@@ -345,6 +348,7 @@
           <h3>All Umrah Packages</h3>
           <div class="table-head-actions">
             <div class="search-global" style="width:220px"><input type="text" placeholder="Search..." oninput="searchPackages(this.value)"></div>
+            <button class="btn btn-secondary btn-sm" onclick="openAutoPackageModal()">⚡ Auto Create</button>
             <button class="btn btn-primary btn-sm" onclick="openBuilder()">✨ Create Package</button>
           </div>
         </div>
@@ -1206,6 +1210,165 @@ Cancellation within 24 hours: No refund</textarea></div>
   </div>
 </div>
 
+<!-- ============ AUTO PACKAGE MODAL ============ -->
+<div class="modal-bg" id="autoPackageModal">
+  <div class="modal auto-package-modal">
+    <div class="modal-head auto-package-head">
+      <div><span class="auto-package-kicker">SMART PACKAGE BUILDER</span><h2>⚡ Auto Create Package</h2></div>
+      <button class="close-btn" onclick="closeModal('autoPackageModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="auto-package-intro">ভ্রমণের তথ্য দিন—Generate Package চাপলে সরাসরি Packages list-এ save হবে।</p>
+      <div class="auto-stepper" aria-label="Package creation steps">
+        <button type="button" class="auto-stepper-item is-active" data-step="1" aria-current="step" onclick="goToAutoPackageStep(1)"><span>1</span><b>Trip & Pax</b></button>
+        <button type="button" class="auto-stepper-item" data-step="2" onclick="goToAutoPackageStep(2)"><span>2</span><b>Hotels</b></button>
+        <button type="button" class="auto-stepper-item" data-step="3" onclick="goToAutoPackageStep(3)"><span>3</span><b>Review & Save</b></button>
+      </div>
+      <section class="auto-step-panel" data-auto-panel="1">
+        <div class="auto-package-section">
+          <h3>🗓️ Travel & Package Details</h3>
+          <div class="grid-2">
+            <div class="field"><label>Package Category</label><select id="autoPackageType" onchange="updateAutoPackageType()"></select></div>
+            <div class="field"><label>Package Nights</label><input type="text" id="autoPackageDuration" readonly value="0 nights"></div>
+            <div class="field"><label>Check In <span class="req">*</span></label><input type="date" id="autoCheckIn" onchange="updateAutoPackageNights(true,true)"></div>
+            <div class="field"><label>Check Out <span class="req">*</span></label><input type="date" id="autoCheckOut" onchange="updateAutoPackageNights(true,true)"></div>
+            <div class="field auto-customer-field">
+              <label for="autoCustomerName">Customer Name <span class="req">*</span></label>
+              <input type="search" id="autoCustomerName" list="autoCustomerSuggestions" autocomplete="off" placeholder="Type or choose a customer" oninput="onAutoCustomerInput()" aria-describedby="autoCustomerHint">
+              <datalist id="autoCustomerSuggestions"></datalist>
+              <input type="hidden" id="autoCustomerId" value="">
+              <small class="auto-field-hint" id="autoCustomerHint">Type a new name or choose an existing customer.</small>
+            </div>
+          </div>
+          <div class="auto-preset-label">Quick preset <span>Sets category, duration & room sharing</span></div>
+          <div class="auto-preset-grid" id="autoPresetChoices"></div>
+          <input type="hidden" id="autoRoomSharing" value="triple">
+          <input type="hidden" id="autoPresetKey" value="">
+        </div>
+        <div class="auto-package-section">
+          <h3>👥 Passengers</h3>
+          <div class="grid-3">
+            <div class="field"><label>Adults</label><input type="number" id="autoPaxAdult" min="1" value="2" oninput="renderAutoServiceEntries();renderAutoHotelRoomRates();renderAutoPackageEstimate();renderAutoHotelBudgetMatches()"></div>
+            <div class="field"><label>Children</label><input type="number" id="autoPaxChild" min="0" value="0" oninput="renderAutoServiceEntries();renderAutoHotelRoomRates();renderAutoPackageEstimate();renderAutoHotelBudgetMatches()"></div>
+            <div class="field"><label>Infants</label><input type="number" id="autoPaxInfant" min="0" value="0" oninput="renderAutoServiceEntries();renderAutoHotelRoomRates();renderAutoPackageEstimate();renderAutoHotelBudgetMatches()"></div>
+          </div>
+        </div>
+      </section>
+      <section class="auto-step-panel" data-auto-panel="2" hidden>
+        <div class="auto-package-section">
+          <h3>🏨 Hotel Selection <span class="auto-package-optional">Optional</span></h3>
+          <div class="auto-hotel-stay-plan">
+            <div class="auto-hotel-stay-heading"><b>Stay plan</b><small>আগে দুই শহরে কত রাত থাকবেন ঠিক করুন; মোট রাত package duration-এর সমান হতে হবে।</small></div>
+            <div class="grid-2">
+              <div class="auto-hotel-city-plan">
+                <b>Makkah</b>
+                <div class="field"><label for="autoMakkahNights">Nights</label><input type="number" id="autoMakkahNights" min="0" value="0" oninput="updateAutoPackageNights(false)"></div>
+                <details class="auto-disclosure auto-room-disclosure">
+                  <summary><b>Room mix & rates</b><span id="autoMakkahRoomMixSummary" class="auto-disclosure-meta" aria-live="polite"></span></summary>
+                  <div class="auto-disclosure-content">
+                    <div id="autoMakkahRoomMix" class="auto-hotel-room-mix"></div>
+                    <div id="autoMakkahRoomRates" class="auto-hotel-room-rates"></div>
+                  </div>
+                </details>
+              </div>
+              <div class="auto-hotel-city-plan">
+                <b>Madinah</b>
+                <div class="field"><label for="autoMadinahNights">Nights</label><input type="number" id="autoMadinahNights" min="0" value="0" oninput="updateAutoPackageNights(false)"></div>
+                <details class="auto-disclosure auto-room-disclosure">
+                  <summary><b>Room mix & rates</b><span id="autoMadinahRoomMixSummary" class="auto-disclosure-meta" aria-live="polite"></span></summary>
+                  <div class="auto-disclosure-content">
+                    <div id="autoMadinahRoomMix" class="auto-hotel-room-mix"></div>
+                    <div id="autoMadinahRoomRates" class="auto-hotel-room-rates"></div>
+                  </div>
+                </details>
+              </div>
+            </div>
+            <div class="auto-package-hint" id="autoHotelNightsHint">Set the nights for each city. Their total must match the package duration.</div>
+          </div>
+          <div class="grid-2 auto-budget-controls">
+            <div class="field"><label for="autoHotelCategory">Hotel Category</label><select id="autoHotelCategory" onchange="renderAutoHotelBudgetMatches()"><option value="all">Any star category</option><option value="3">3 Star & above</option><option value="4">4 Star & above</option><option value="5">5 Star</option></select></div>
+            <div class="field"><label for="autoHotelBudget">Total Hotel Budget (৳)</label><input type="number" id="autoHotelBudget" min="0" step="1" placeholder="Enter budget for all rooms and cities" oninput="renderAutoPackageEstimate();renderAutoHotelBudgetMatches()"></div>
+          </div>
+          <div class="auto-hotel-budget-panel">
+            <div class="auto-hotel-match-heading"><div><b>Hotels within your budget</b><small>Shows the best-priced option at each star level when it fits your budget; estimate uses guests, city nights and room rates.</small></div><span id="autoHotelMatchCount"></span></div>
+            <div id="autoHotelBudgetStatus" class="auto-hotel-budget-status" role="status"></div>
+            <div id="autoHotelOnlyEstimate" class="auto-hotel-only-estimate" role="status" aria-live="polite"></div>
+            <div id="autoHotelBudgetMatches" class="auto-hotel-match-groups" aria-live="polite"></div>
+            <p class="auto-hotel-manual-note">Category filters the suggestions. Single-city cards select only that city; a Makkah + Madinah card selects both. Each card shows its room mix, and you can edit room counts and rates above.</p>
+          </div>
+          <details class="auto-disclosure auto-manual-hotel-disclosure">
+            <summary><b>Or choose hotels manually</b><span class="auto-disclosure-meta">Optional</span></summary>
+            <div class="auto-disclosure-content">
+              <div class="grid-2">
+                <div class="field auto-search-field">
+                  <label for="autoMakkahHotelSearch">Makkah Hotel</label>
+                  <input type="search" id="autoMakkahHotelSearch" list="autoMakkahHotelOptions" placeholder="Search hotels..." autocomplete="off" oninput="syncAutoHotelSearch('makkah')" onchange="syncAutoHotelSearch('makkah')">
+                  <datalist id="autoMakkahHotelOptions"></datalist>
+                  <select id="autoMakkahHotel" class="auto-search-value" tabindex="-1" aria-hidden="true"><option value="">-- Skip hotel --</option></select>
+                </div>
+                <div class="field auto-search-field">
+                  <label for="autoMadinahHotelSearch">Madinah Hotel</label>
+                  <input type="search" id="autoMadinahHotelSearch" list="autoMadinahHotelOptions" placeholder="Search hotels..." autocomplete="off" oninput="syncAutoHotelSearch('madinah')" onchange="syncAutoHotelSearch('madinah')">
+                  <datalist id="autoMadinahHotelOptions"></datalist>
+                  <select id="autoMadinahHotel" class="auto-search-value" tabindex="-1" aria-hidden="true"><option value="">-- Skip hotel --</option></select>
+                </div>
+              </div>
+            </div>
+          </details>
+        </div>
+      </section>
+      <section class="auto-step-panel" data-auto-panel="3" hidden>
+        <div class="auto-package-section auto-services-section">
+          <details class="auto-disclosure auto-service-disclosure" id="autoServiceDetails">
+            <summary><b>Optional services</b><span id="autoServiceSummaryCount" class="auto-disclosure-meta" aria-live="polite">Add flights, transfers, visa or Ziyarah</span></summary>
+            <div class="auto-disclosure-content">
+              <div id="autoServiceChoices" class="auto-service-list"></div>
+            </div>
+          </details>
+          <button type="button" class="btn btn-secondary auto-add-service" id="autoAddServiceButton" onclick="addAutoServiceEntry()">➕ Add service</button>
+          <small class="auto-service-note">একই service একাধিকবার যোগ করতে পারেন—প্রতিটি route ও quantity আলাদাভাবে হিসাব হবে।</small>
+        </div>
+        <div class="auto-package-section">
+          <h3>💰 Profit per Adult</h3>
+          <div class="auto-profit-grid">
+          <div class="field"><label for="autoProfitPerAdult">Profit per Adult (৳)</label><input type="number" id="autoProfitPerAdult" min="0" step="1" value="0" oninput="renderAutoPackageEstimate()"></div>
+            <div class="auto-profit-total"><span id="autoProfitCountLabel">Based on 2 adults</span><b id="autoProfitTotal">৳ 0</b><small>শুধু Adult × amount; এটি পুরো package total-এ যুক্ত হবে।</small></div>
+          </div>
+        </div>
+        <div class="auto-package-section auto-summary-section">
+          <h3>📋 Package Summary</h3>
+          <div id="autoPackageSummary" class="auto-package-summary" aria-live="polite"></div>
+          <p class="auto-summary-note">এটি save করার আগে summary, quotation preview নয়। Generate চাপলে package সরাসরি Packages list-এ save হবে।</p>
+        </div>
+        <div class="auto-package-section">
+          <h3>🧮 Live Estimate</h3>
+          <div class="auto-estimate-totals">
+            <div><span>Known Sell (selected items)</span><b id="autoKnownSellTotal">৳ 0</b></div>
+            <div><span>Known Vendor Cost</span><b id="autoVendorCostTotal">৳ 0</b></div>
+          </div>
+          <details class="auto-disclosure auto-estimate-details">
+            <summary><b>Detailed rate breakdown</b><span class="auto-disclosure-meta">Live calculation</span></summary>
+            <div class="auto-disclosure-content">
+              <div id="autoEstimateBreakdown" class="auto-estimate-breakdown"></div>
+            </div>
+          </details>
+          <div id="autoRateWarnings" class="auto-rate-warnings" role="status"></div>
+          <p class="auto-estimate-note">Hotel price master rate অথবা এখানে দেওয়া manual rate থেকে calculate হবে। VAT ও final total Builder-এ calculate হবে; Adult profit পুরো package total-এ যুক্ত হবে। সব rate যাচাই না করে estimate-কে final quotation ধরবেন না।</p>
+        </div>
+      </section>
+      <div class="auto-package-error" id="autoPackageError" role="alert"></div>
+    </div>
+    <div class="modal-foot">
+      <div class="auto-package-footnote" id="autoPackageFootnote">Generate করলে package list-এ save হবে। পরে package-এ click করে preview দেখুন।</div>
+      <div class="right-actions auto-wizard-actions">
+        <button class="btn btn-secondary" onclick="closeModal('autoPackageModal')">Cancel</button>
+        <button type="button" class="btn btn-primary" id="autoPackageNext" onclick="advanceAutoPackageStep()">Continue to Hotels →</button>
+        <button class="btn btn-primary auto-package-submit" id="autoPackageSubmit" onclick="generateAutoPackage()" hidden>✨ Generate Package</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ============ BUILDER MODAL ============ -->
 <div class="modal-bg" id="builderModal">
   <div class="modal wide">
@@ -1632,6 +1795,7 @@ Cancellation within 24 hours: No refund</textarea></div>
 <script src="assets/js/builder/builder-itinerary.js"></script>
 <script src="assets/js/builder/builder-content.js"></script>
 <script src="assets/js/builder/builder-templates.js"></script>
+<script src="assets/js/builder/builder-auto.js"></script>
 
 <!-- 5. PAGES -->
 <script src="assets/js/pages/dashboard.js"></script>
