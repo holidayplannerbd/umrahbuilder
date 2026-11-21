@@ -1,23 +1,35 @@
 /* ============================================================
    UMRAH BUILDER — PAGES / BUSINESS / PERFORMANCE
-   Top Performer Logic: Combined Score (Packages + Revenue)
+   Top Performer Logic: Packages, Sales, Tasks, and Time Efficiency
    ============================================================ */
 
 /* ==================== CONFIG ==================== */
-const PERF_PKG_WEIGHT = 60;      // 60% weight on package count
-const PERF_REVENUE_WEIGHT = 40;  // 40% weight on revenue
+const PERF_WEIGHTS = {
+  packages: 20,
+  soldPackages: 20,
+  revenue: 20,
+  tasks: 25,
+  efficiency: 15
+};
+let performanceTasks = [];
+
+async function loadPerformanceTasks() {
+  const { collection, getDocs } = window.firebaseFns;
+  const snapshot = await getDocs(collection(window.firebaseDB, 'tasks'));
+  performanceTasks = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+}
 
 /* ==================== GET NAME BY UID ==================== */
 function getPerformanceUserName(uid) {
   if (!uid) return 'Unknown';
 
+  const profiles = window.__userProfiles || {};
+  if (profiles[uid]?.name) return profiles[uid].name;
+
   const cu = window.firebaseAuth?.currentUser;
   if (cu && cu.uid === uid) {
     return cu.displayName || cu.email?.split('@')[0] || 'You';
   }
-
-  const profiles = window.__userProfiles || {};
-  if (profiles[uid]?.name) return profiles[uid].name;
 
   return 'Team Member';
 }
@@ -26,35 +38,94 @@ function getPerformanceUserName(uid) {
 function getPerformanceUserPhoto(uid) {
   if (!uid) return '';
 
-  const cu = window.firebaseAuth?.currentUser;
-  if (cu && cu.uid === uid) {
-    const profiles = window.__userProfiles || {};
-    return profiles[uid]?.photo || cu.photoURL || '';
-  }
-
   const profiles = window.__userProfiles || {};
   if (profiles[uid]?.photo) return profiles[uid].photo;
+
+  const cu = window.firebaseAuth?.currentUser;
+  if (cu && cu.uid === uid) {
+    return cu.photoURL || '';
+  }
 
   return '';
 }
 
+function formatPerformanceDuration(seconds) {
+  if (!Number.isFinite(seconds) || seconds <= 0) return 'Not tracked';
+  const totalMinutes = Math.max(1, Math.round(seconds / 60));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return hours ? `${hours}h ${minutes}m` : `${minutes}m`;
+}
+
+function resolvePerformanceUserId(value, statsMap) {
+  if (!value || typeof value !== 'string') return '';
+  if (statsMap[value]) return value;
+  const profiles = window.__userProfiles || {};
+  const identity = value.trim().toLowerCase();
+
+  const profile = Object.values(profiles).find(p =>
+    [p.uid, p.email, p.name, p.username]
+      .some(candidate => String(candidate || '').trim().toLowerCase() === identity)
+  );
+  return profile?.uid || '';
+}
+
 /* ==================== BUILD REAL STATS ==================== */
-function buildPerformanceStats() {
+function buildPerformanceStats(tasks = performanceTasks) {
   const statsMap = {};
+  const profiles = window.__userProfiles || {};
+
+  const ensureStats = (uid, role) => {
+    if (!uid) return null;
+    if (!statsMap[uid]) {
+      statsMap[uid] = {
+        uid, role: role || profiles[uid]?.role || 'staff',
+        packages: 0, confirmed: 0, revenue: 0, customers: new Set(),
+        tasksCompleted: 0, trackedTaskSeconds: 0, trackedTasks: 0,
+        averageTaskSeconds: 0
+      };
+    }
+    return statsMap[uid];
+  };
+
+  Object.values(profiles).forEach(profile => {
+    if (profile.uid) ensureStats(profile.uid, profile.role);
+  });
 
   STORE.packages.forEach(p => {
     const uid = p.userId;
     if (!uid) return;
 
-    if (!statsMap[uid]) {
-      statsMap[uid] = { uid, count: 0, confirmed: 0, revenue: 0, customers: new Set() };
+    const s = ensureStats(uid);
+    s.packages++;
+    if (['Confirmed', 'Paid', 'Completed', 'Travelled'].includes(p.status)) {
+      s.confirmed++;
+      const revenue = Number(p.grandTotal || 0);
+      if (Number.isFinite(revenue)) s.revenue += Math.max(0, revenue);
     }
-
-    const s = statsMap[uid];
-    s.count++;
-    s.revenue += Number(p.grandTotal || 0);
-    if (['Confirmed', 'Paid', 'Completed'].includes(p.status)) s.confirmed++;
     if (p.customerName) s.customers.add(p.customerName);
+  });
+
+  tasks.forEach(task => {
+    if (!(task.done === true || String(task.status || '').toLowerCase() === 'done')) return;
+
+    let uid = Object.prototype.hasOwnProperty.call(task, 'completedBy')
+      ? task.completedBy
+      : '';
+    if (!Object.prototype.hasOwnProperty.call(task, 'completedBy')) {
+      const assignees = Array.isArray(task.assignedTo) ? task.assignedTo : [task.assignedTo];
+      if (assignees.length !== 1 || ['both', 'all'].includes(String(assignees[0] || '').toLowerCase())) return;
+      uid = resolvePerformanceUserId(String(assignees[0] || ''), statsMap);
+    }
+    if (!uid) return;
+
+    const s = ensureStats(uid);
+    s.tasksCompleted++;
+    const seconds = Number(task.totalTime || 0);
+    if (Number.isFinite(seconds) && seconds > 0) {
+      s.trackedTaskSeconds += seconds;
+      s.trackedTasks++;
+    }
   });
 
   const result = [];
@@ -62,63 +133,75 @@ function buildPerformanceStats() {
     const s = statsMap[uid];
     result.push({
       uid,
+      role: String(s.role || 'staff').replace(/^./, c => c.toUpperCase()),
       name: getPerformanceUserName(uid),
       photo: getPerformanceUserPhoto(uid),
-      packages: s.count,
+      packages: s.packages,
       confirmed: s.confirmed,
       revenue: s.revenue,
-      customers: s.customers.size
+      customers: s.customers.size,
+      tasksCompleted: s.tasksCompleted,
+      trackedTasks: s.trackedTasks,
+      averageTaskSeconds: s.trackedTasks ? s.trackedTaskSeconds / s.trackedTasks : 0
     });
   }
 
-  /* ⭐ NEW LOGIC: Combined Score
-     Combined Score = (Packages × 60%) + (Revenue Share × 40%)
-     
-     Example:
-     - Junayet: 5 packages, ৳1,00,000 revenue
-     - Rajon:   15 packages, ৳50,000 revenue
-     
-     Rajon top — because more work done!
-  */
+  const maxValues = {
+    packages: Math.max(0, ...result.map(s => s.packages)),
+    soldPackages: Math.max(0, ...result.map(s => s.confirmed)),
+    revenue: Math.max(0, ...result.map(s => s.revenue)),
+    tasks: Math.max(0, ...result.map(s => s.tasksCompleted))
+  };
+  const fastestAverage = Math.min(
+    ...result.filter(s => s.averageTaskSeconds > 0).map(s => s.averageTaskSeconds),
+    Infinity
+  );
 
-  /* Normalize by max values */
-  const maxPackages = Math.max(1, ...result.map(s => s.packages));
-  const maxRevenue = Math.max(1, ...result.map(s => s.revenue));
-
-  /* Calculate combined score */
   result.forEach(s => {
-    const pkgScore = (s.packages / maxPackages) * PERF_PKG_WEIGHT;
-    const revenueScore = (s.revenue / maxRevenue) * PERF_REVENUE_WEIGHT;
-    s.combinedScore = pkgScore + revenueScore;
-    s.pkgScore = pkgScore;
-    s.revenueScore = revenueScore;
+    s.efficiencyScore = s.averageTaskSeconds > 0 && Number.isFinite(fastestAverage)
+      ? fastestAverage / s.averageTaskSeconds * 100
+      : 0;
+    const metrics = {
+      packages: s.packages,
+      soldPackages: s.confirmed,
+      revenue: s.revenue,
+      tasks: s.tasksCompleted,
+      efficiency: s.efficiencyScore
+    };
+    s.combinedScore = Object.keys(PERF_WEIGHTS).reduce((score, key) => {
+      const normalized = key === 'efficiency'
+        ? metrics[key]
+        : (maxValues[key] ? metrics[key] / maxValues[key] * 100 : 0);
+      return score + normalized * PERF_WEIGHTS[key] / 100;
+    }, 0);
   });
 
-  /* Sort by combined score */
-  result.sort((a, b) => b.combinedScore - a.combinedScore);
+  result.sort((a, b) => b.combinedScore - a.combinedScore || a.name.localeCompare(b.name));
 
   return result;
 }
 
 /* ==================== RENDER PERFORMANCE ==================== */
 async function renderPerformance() {
-  if (typeof refreshUserProfiles === 'function') {
-    try { await refreshUserProfiles(); } catch (e) {}
+  if (typeof refreshUserProfiles === 'function') await refreshUserProfiles();
+
+  try {
+    await loadPerformanceTasks();
+  } catch (e) {
+    toast('Could not load task performance data: ' + e.message, 'error');
+    return;
   }
 
   const stats = buildPerformanceStats();
-  const maxScore = stats.length ? stats[0].combinedScore : 1;
   const top = stats[0];
 
   /* ============ Top Performer Card ============ */
   const topCard = document.getElementById('topPerformerCard');
   if (topCard) {
-    if (top && top.packages > 0) {
+    if (top && (top.packages > 0 || top.confirmed > 0 || top.tasksCompleted > 0)) {
       const avatarHtml = top.photo
         ? `<img src="${top.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
         : `🥇`;
-
-      const scorePct = maxScore > 0 ? (top.combinedScore / maxScore * 100).toFixed(0) : 0;
 
       topCard.innerHTML = `
         <div class="top-performer-card">
@@ -129,37 +212,37 @@ async function renderPerformance() {
               <div class="top-performer-name">${esc(top.name)}</div>
               <div class="top-performer-stats">
                 <span>📦 <b>${top.packages}</b> packages</span>
-                <span>💰 <b>${fmt(top.revenue)}</b></span>
-                <span>✅ <b>${top.confirmed}</b> confirmed</span>
+                <span>🛒 <b>${top.confirmed}</b> sold · ${fmt(top.revenue)}</span>
+                <span>✅ <b>${top.tasksCompleted}</b> tasks · ⏱ ${formatPerformanceDuration(top.averageTaskSeconds)} avg</span>
               </div>
               <div class="top-performer-score">
                 ⭐ Score: ${top.combinedScore.toFixed(1)} / 100
               </div>
             </div>
             <div class="top-performer-bonus">
-              <div class="lbl">💰 Bonus (2%)</div>
+              <div class="lbl">💰 Sales Bonus (2%)</div>
               <div class="val">${fmt(Math.round(top.revenue * 0.02))}</div>
             </div>
           </div>
         </div>
       `;
     } else {
-      topCard.innerHTML = `<div style="padding:20px;background:var(--bg-2);border-radius:14px;text-align:center;color:var(--text-3);font-size:13px">📊 এখনো কোনো প্যাকেজ তৈরি হয়নি</div>`;
+      topCard.innerHTML = `<div style="padding:20px;background:var(--bg-2);border-radius:14px;text-align:center;color:var(--text-3);font-size:13px">📊 No performance data yet</div>`;
     }
   }
 
   const ac = document.getElementById('perfActiveCount');
-  if (ac) ac.textContent = stats.length + ' Active';
+  if (ac) ac.textContent = stats.length + ' Team Members';
 
   /* ============ Leaderboard Table ============ */
   const ptb = document.getElementById('perfTableBody');
   if (ptb) {
     if (!stats.length) {
-      ptb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-3)">No data</td></tr>';
+      ptb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text-3)">No data</td></tr>';
     } else {
       ptb.innerHTML = stats.map((d, i) => {
         const rc = i === 0 ? 'r1' : i === 1 ? 'r2' : i === 2 ? 'r3' : 'rn';
-        const scorePct = maxScore > 0 ? (d.combinedScore / maxScore * 100).toFixed(0) : 0;
+        const scorePct = Math.min(100, d.combinedScore).toFixed(0);
         const isMe = window.firebaseAuth?.currentUser?.uid === d.uid;
 
         const avatarContent = d.photo
@@ -175,10 +258,12 @@ async function renderPerformance() {
               <div style="font-size:11px;color:var(--text-3)">${d.customers} customers</div>
             </div>
           </div></td>
-          <td><span class="pill ${isMe ? 'confirmed' : 'quoted'}">${isMe ? 'YOU' : 'TEAM'}</span></td>
+          <td><span class="pill ${isMe ? 'confirmed' : 'quoted'}">${esc(d.role)}</span></td>
           <td><b>${d.packages}</b></td>
-          <td style="color:var(--green);font-weight:800">${fmt(d.revenue)}</td>
           <td>${d.confirmed}</td>
+          <td style="color:var(--green);font-weight:800">${fmt(d.revenue)}</td>
+          <td>${d.tasksCompleted}</td>
+          <td>${formatPerformanceDuration(d.averageTaskSeconds)}</td>
           <td>
             <div class="perf-bar"><div class="perf-bar-fill" style="width:${scorePct}%"></div></div>
             <div style="font-size:10px;color:var(--text-3);margin-top:2px">
@@ -310,17 +395,29 @@ async function openManageEmployees() {
   if (typeof refreshUserProfiles === 'function') {
     try { await refreshUserProfiles(); } catch (e) {}
   }
+  try {
+    await loadPerformanceTasks();
+  } catch (e) {
+    toast('Could not load task performance data: ' + e.message, 'error');
+    return;
+  }
   const stats = buildPerformanceStats();
   const lines = stats.map((s, i) =>
-    `${i + 1}. ${s.name}\n   📦 ${s.packages} packages · 💰 ${fmt(s.revenue)} · ⭐ Score: ${s.combinedScore.toFixed(1)}`
+    `${i + 1}. ${s.name}\n   📦 ${s.packages} created · 🛒 ${s.confirmed} sold · ✅ ${s.tasksCompleted} tasks · ⏱ ${formatPerformanceDuration(s.averageTaskSeconds)} avg · ⭐ ${s.combinedScore.toFixed(1)}`
   ).join('\n\n');
-  alert(`👥 Team Members (${stats.length}):\n\n${lines || 'No users yet'}\n\n📊 Ranking by Combined Score (60% Packages + 40% Revenue)`);
+  alert(`👥 Team Members (${stats.length}):\n\n${lines || 'No users yet'}\n\n📊 Ranking: 20% packages created, 20% sold packages, 20% sales revenue, 25% completed tasks, 15% task speed`);
 }
 
 async function showTeamLeaderboard() {
+  try {
+    await loadPerformanceTasks();
+  } catch (e) {
+    toast('Could not load task performance data: ' + e.message, 'error');
+    return;
+  }
   const stats = buildPerformanceStats();
   const lines = stats.map((s, i) =>
-    `${i + 1}. ${s.name} — Score: ${s.combinedScore.toFixed(1)} (${s.packages} pkg, ${fmt(s.revenue)})`
+    `${i + 1}. ${s.name} — ${s.combinedScore.toFixed(1)} pts (${s.packages} created, ${s.confirmed} sold, ${s.tasksCompleted} tasks, ${formatPerformanceDuration(s.averageTaskSeconds)} avg)`
   );
   alert('🏆 Team Leaderboard:\n\n' + (lines.join('\n') || 'No data yet'));
 }

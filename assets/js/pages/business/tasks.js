@@ -480,7 +480,12 @@ async function toggleTaskTimer(taskId) {
     toast('▶️ Timer started', 'success');
   }
 
-  try { await dbSave('tasks', task); } catch (e) {}
+  try {
+    await dbSave('tasks', task);
+  } catch (e) {
+    toast('Task progress save failed: ' + e.message, 'error');
+    return;
+  }
   refreshTaskTimersUI();
 }
 
@@ -691,6 +696,10 @@ async function toggleDetailStep(stepIndex, event) {
   if (!roles.isCreator && !roles.isAssignee) return;
 
   const steps = (task.steps && task.steps.length) ? task.steps : DEFAULT_STEPS;
+  const previousTask = { ...task };
+  const previousTimer = tasksState.activeTimers[taskId]
+    ? { ...tasksState.activeTimers[taskId] }
+    : null;
   let completed = task.stepsCompleted || 0;
 
   if (stepIndex === completed) completed = stepIndex + 1;
@@ -703,14 +712,22 @@ async function toggleDetailStep(stepIndex, event) {
     task.done = false;
     task.status = completed > 0 ? 'progress' : 'todo';
     task.timerStopped = false; 
+    delete task.completedAt;
+    delete task.completedBy;
   } else {
-    task.done = true;
-    task.status = 'done';
-    task.completedAt = Date.now();
-    task.timerStopped = true; 
+    recordTaskCompletion(task);
   }
 
-  try { await dbSave('tasks', task); } catch (e) {}
+  try {
+    await dbSave('tasks', task);
+  } catch (e) {
+    Object.keys(task).forEach(key => delete task[key]);
+    Object.assign(task, previousTask);
+    if (previousTimer) tasksState.activeTimers[taskId] = previousTimer;
+    else delete tasksState.activeTimers[taskId];
+    toast('Task progress save failed: ' + e.message, 'error');
+    return;
+  }
 
   const progressPct = task.done ? 100 : getTaskProgressPct(task);
   renderBigProgress(progressPct);
@@ -805,6 +822,30 @@ function detailStopTimer() {
   if (tasksState.detailTaskId) stopTaskTimer(tasksState.detailTaskId);
 }
 
+function recordTaskCompletion(task) {
+  const user = window.firebaseAuth?.currentUser;
+  const timer = tasksState.activeTimers[task.id] || {
+    elapsed: Number(task.totalTime || 0),
+    running: !!task.timerRunning,
+    startTime: task.timerStartTime || null
+  };
+  let totalTime = Number(timer.elapsed || 0);
+  if (timer.running && timer.startTime) {
+    totalTime += Math.floor((Date.now() - timer.startTime) / 1000);
+  }
+
+  task.done = true;
+  task.status = 'done';
+  task.completedAt = Date.now();
+  task.completedBy = user?.uid || null;
+  task.totalTime = totalTime;
+  task.timerRunning = false;
+  task.timerStartTime = null;
+  task.timerStopped = true;
+  task.updatedAt = task.completedAt;
+  tasksState.activeTimers[task.id] = { startTime: null, running: false, elapsed: totalTime };
+}
+
 async function markTaskDone() {
   const taskId = tasksState.detailTaskId;
   if (!taskId) return;
@@ -818,27 +859,23 @@ async function markTaskDone() {
   }
 
   const steps = (task.steps && task.steps.length) ? task.steps : DEFAULT_STEPS;
+  const previousTask = { ...task };
+  const previousTimer = tasksState.activeTimers[taskId]
+    ? { ...tasksState.activeTimers[taskId] }
+    : null;
   task.stepsCompleted = steps.length;
-  task.done = true;
-  task.status = 'done';
-  task.completedAt = Date.now();
-  task.updatedAt = Date.now();
-  task.timerStopped = true; 
-
-  const timer = tasksState.activeTimers[taskId] || { elapsed: Number(task.totalTime || 0) };
-  let finalElapsed = timer.elapsed;
-  if (timer.running && timer.startTime) finalElapsed += Math.floor((Date.now() - timer.startTime) / 1000);
-
-  task.totalTime = finalElapsed;
-  task.timerRunning = false;
-  task.timerStartTime = null;
-  tasksState.activeTimers[taskId] = { startTime: null, running: false, elapsed: finalElapsed };
+  recordTaskCompletion(task);
 
   try {
     await dbSave('tasks', task);
     toast('🎉 Task সম্পন্ন! Timer stopped.', 'success');
   } catch (e) {
+    Object.keys(task).forEach(key => delete task[key]);
+    Object.assign(task, previousTask);
+    if (previousTimer) tasksState.activeTimers[taskId] = previousTimer;
+    else delete tasksState.activeTimers[taskId];
     toast('❌ Save failed: ' + e.message, 'error');
+    return;
   }
   closeTaskDetail();
 }
@@ -986,7 +1023,11 @@ async function saveTask() {
     timerStartTime: existing?.timerStartTime || null,
     timerStopped: existing?.timerStopped || false,
     steps: existing?.steps || DEFAULT_STEPS,
-    stepsCompleted: existing?.stepsCompleted || 0
+    stepsCompleted: existing?.stepsCompleted || 0,
+    ...(existing && Object.prototype.hasOwnProperty.call(existing, 'completedBy')
+      ? { completedBy: existing.completedBy }
+      : {}),
+    ...(existing?.completedAt ? { completedAt: existing.completedAt } : {})
   };
 
   try {
@@ -1161,6 +1202,7 @@ async function saveEditSteps() {
   }
 
   const oldCompleted = Math.min(task.stepsCompleted || 0, validSteps.length);
+  const wasDone = task.done === true;
 
   task.steps = validSteps;
   task.stepsCompleted = oldCompleted;
@@ -1170,10 +1212,18 @@ async function saveEditSteps() {
     task.status = 'done';
     task.stepsCompleted = validSteps.length;
     task.timerStopped = true;
+    if (!wasDone && !task.completedBy) {
+      task.completedBy = null;
+      task.completedAt = Date.now();
+    }
   } else {
     task.done = false;
     task.status = oldCompleted > 0 ? 'progress' : 'todo';
     task.timerStopped = false;
+    if (wasDone) {
+      delete task.completedBy;
+      delete task.completedAt;
+    }
   }
 
   task.updatedAt = Date.now();
