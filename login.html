@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🔐 Sign In — Umrah Package Builder</title>
+<script>
+  if (location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+    console.log = function () {};
+    console.info = function () {};
+    console.debug = function () {};
+    console.warn = function () {};
+    console.error = function () {};
+  }
+</script>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
 
@@ -1012,6 +1021,7 @@ body {
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
     getAuth,
+    signOut,
     signInWithEmailAndPassword,
     onAuthStateChanged,
     sendPasswordResetEmail,
@@ -1021,6 +1031,7 @@ body {
     createUserWithEmailAndPassword,
     updateProfile
   } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAQU6J2Wjb9lHiZEvyKB2q1D5aHKAz9jAo",
@@ -1033,6 +1044,7 @@ body {
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
+  const firestore = getFirestore(app);
 
   window.firebaseAuth = auth;
   window.firebaseAuthFns = {
@@ -1046,12 +1058,25 @@ body {
 
   onAuthStateChanged(auth, (user) => {
     if (user) {
-      localStorage.setItem('umrah_session_start', String(Date.now()));
-      window.location.href = 'index.html';
+      getDoc(doc(firestore, 'userProfiles', user.uid))
+        .then((profileSnap) => {
+          if (!profileSnap.exists()) {
+            signOut(auth);
+            const errorBox = document.getElementById('loginError');
+            const errorText = document.getElementById('loginErrorText');
+            if (errorBox && errorText) {
+              errorText.textContent = 'এই account workspace-এ authorized নয়।';
+              errorBox.classList.add('show');
+            }
+            return;
+          }
+          localStorage.setItem('umrah_session_start', String(Date.now()));
+          window.location.href = 'index.html';
+        })
+        .catch(() => signOut(auth));
     }
   });
 
-  console.log('🔐 Firebase Auth initialized');
 </script>
 
 <script>
@@ -1149,12 +1174,10 @@ body {
       provider.setCustomParameters({ prompt: 'select_account' });
 
       const result = await signInWithPopup(window.firebaseAuth, provider);
-      console.log('✅ Google login:', result.user.email);
 
       window.location.href = 'index.html';
 
     } catch (err) {
-      console.error('Google login error:', err);
 
       let msg = 'Google sign-in failed. Please try again.';
       if (err.code === 'auth/popup-closed-by-user') msg = 'Sign-in cancelled.';
@@ -1333,12 +1356,10 @@ body {
       provider.setCustomParameters({ prompt: 'select_account' });
 
       const result = await signInWithPopup(window.firebaseAuth, provider);
-      console.log('✅ Google login:', result.user.email);
 
       window.location.href = 'index.html';
 
     } catch (err) {
-      console.error('Google login error:', err);
 
       let msg = 'Google sign-in failed. Please try again.';
       if (err.code === 'auth/popup-closed-by-user') msg = 'Sign-in cancelled.';

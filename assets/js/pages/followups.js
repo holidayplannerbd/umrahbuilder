@@ -315,7 +315,7 @@ function openActivityLog(followupId) {
                 <option value="other">📌 Other</option>
               </select>
             </div>
-            <div class="field"><label>Date</label><input type="date" id="actDate" value="${today()}"></div>
+            <div class="field"><label>Date</label><input type="date" id="actDate"></div>
             <div class="field"><label>Duration (optional)</label><input type="text" id="actDuration" placeholder="e.g., 15 min"></div>
             <div class="field">
               <label>Outcome</label>
@@ -354,6 +354,7 @@ function openActivityLog(followupId) {
     </div>
   `;
   document.getElementById('modalsContainer').insertAdjacentHTML('beforeend', html);
+  if ($('actDate')) $('actDate').value = today();
 }
 
 async function saveActivity() {

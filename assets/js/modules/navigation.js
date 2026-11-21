@@ -29,20 +29,20 @@ async function nav(page, el) {
   /* ⭐ STRICT Role Check */
   const userRole = (window.currentUserRole || 'admin').toLowerCase();
 
-  /* Accountant restrictions — NO Settings, NO Packages */
+  /* Accountant may open Settings for account security only. */
   if (userRole === 'accountant') {
-    const allowedPages = ['accounts', 'documents', 'reports'];
+    const allowedPages = ['accounts', 'analytics', 'documents', 'reports', 'tasks', 'settings'];
     if (!allowedPages.includes(page)) {
       if (typeof toast === 'function') {
-        toast('❌ Accountant শুধু Accounts, Documents, Reports দেখতে পারে', 'error');
+        toast('❌ এই page-এ access নেই', 'error');
       }
       return;
     }
   }
 
-  /* Staff restrictions — NO Settings */
+  /* Staff may open Settings for account security only. */
   if (userRole === 'staff') {
-    const allowedPages = ['documents', 'reports'];
+    const allowedPages = ['documents', 'reports', 'settings'];
     if (!allowedPages.includes(page)) {
       if (typeof toast === 'function') {
         toast('❌ আপনি এই page এ access পাননি', 'error');
@@ -69,8 +69,11 @@ async function nav(page, el) {
   } catch (e) {}
 
   const t = TITLES[page] || TITLES.dashboard;
-  const s = await dbGetSetting('settings') || {};
-  const name = s.userName || 'Admin';
+  const user = window.firebaseAuth?.currentUser;
+  const name = window.__currentUserDisplayName
+    || user?.displayName
+    || user?.email?.split('@')[0]
+    || 'User';
 
   if (page === 'dashboard') {
     const pt = $('pageTitle');
@@ -98,7 +101,7 @@ async function nav(page, el) {
   if (page === 'vendors') renderVendorsTable();
   if (page === 'settings') {
     loadSettingsForm();
-    if (typeof renderStaffList === 'function') setTimeout(renderStaffList, 300);
+    if (isAdmin() && typeof renderStaffList === 'function') setTimeout(renderStaffList, 300);
   }
 
   /* Business pages */

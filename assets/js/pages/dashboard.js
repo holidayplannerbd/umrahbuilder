@@ -6,7 +6,7 @@
 /* ⭐ Firebase Auth + Firestore profile থেকে ইউজারের তথ্য */
 async function getCurrentUserInfo() {
   const user = window.firebaseAuth?.currentUser;
-  if (!user) return { name: 'User', photo: '', email: '', user: null };
+  if (!user) return { name: 'User', photo: '', email: '', user: null, profile: {} };
 
   let profile = {};
   try {
@@ -24,7 +24,41 @@ async function getCurrentUserInfo() {
   const photo = profile.photo || user.photoURL || '';
   const email = user.email || '';
 
-  return { name, photo, email, user };
+  return { name, photo, email, user, profile };
+}
+
+async function updateUserUI() {
+  const { name, photo, email, user, profile } = await getCurrentUserInfo();
+  window.__currentUserProfile = profile;
+  window.__currentUserDisplayName = name;
+
+  const sideName = $('sideName');
+  if (sideName) sideName.textContent = name;
+  const sideEmail = $('sideEmail');
+  if (sideEmail) sideEmail.textContent = email;
+  renderUserAvatar(photo, name, 'sideAvatar', 'sideAvatarFallback');
+  renderUserAvatar(photo, name, 'anAvatarImg', 'anAvatarFallback');
+
+  const analyticsName = $('anProfileName');
+  if (analyticsName) analyticsName.textContent = name;
+
+  const profilePreview = $('profilePicPreview');
+  if (profilePreview) {
+    profilePreview.innerHTML = photo
+      ? `<img src="${esc(photo)}" alt="">`
+      : `<span id="profilePicFallback">${esc((name[0] || 'U').toUpperCase())}</span>`;
+  }
+
+  const settingsName = $('setUserName');
+  if (settingsName && document.activeElement !== settingsName) settingsName.value = profile.name || user?.displayName || '';
+  const settingsEmail = $('setUserEmail');
+  if (settingsEmail) settingsEmail.value = email;
+  const settingsPhone = $('setUserPhone');
+  if (settingsPhone && document.activeElement !== settingsPhone) settingsPhone.value = profile.phone || user?.phoneNumber || '';
+  const settingsRole = $('setUserRole');
+  if (settingsRole && document.activeElement !== settingsRole) settingsRole.value = profile.role || '';
+
+  return { name, photo, email, user, profile };
 }
 
 /* ⭐ ইউজারের ছবি বা প্রথম অক্ষর দেখানো */

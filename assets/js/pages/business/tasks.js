@@ -72,59 +72,96 @@ function getTaskRoles(task) {
 /* ==================== RENDER TASKS PAGE ==================== */
 async function renderTasks() {
   try {
-    const { collection, onSnapshot } = window.firebaseFns;
+    const { collection, onSnapshot, query, where } = window.firebaseFns;
     const db = window.firebaseDB;
+    const role = (window.currentUserRole || 'admin').toLowerCase();
+    const user = window.firebaseAuth?.currentUser;
 
     if (!db) throw new Error('DB not ready');
 
     if (tasksState.unsubscribe) {
-      tasksState.unsubscribe();
+      tasksState.unsubscribe.forEach(stop => stop());
       tasksState.unsubscribe = null;
     }
 
-    tasksState.unsubscribe = onSnapshot(
-      collection(db, 'tasks'),
-      (snapshot) => {
-        const tasks = [];
+    const mergeTaskSnapshots = () => {
+      const tasksById = new Map();
+      tasksState._taskSnapshots?.forEach(snapshot => {
         snapshot.forEach(doc => {
-          tasks.push({ ...doc.data(), id: doc.data().id || doc.id });
+          const data = doc.data();
+          tasksById.set(doc.id, { ...data, id: data.id || doc.id });
         });
+      });
 
-        tasksState.tasks = tasks;
-
-        tasksState.tasks.sort((a, b) => {
-          if (a.done !== b.done) return a.done ? 1 : -1;
-          return (a.dueDate || '').localeCompare(b.dueDate || '');
+      let tasks = Array.from(tasksById.values());
+      if (role === 'accountant' && user) {
+        tasks = tasks.filter(task => {
+          const assigned = Array.isArray(task.assignedTo) ? task.assignedTo : [task.assignedTo];
+          return assigned.includes(user.uid) || (user.email && assigned.includes(user.email));
         });
-
-        tasksState.activeTimers = {};
-        tasksState.tasks.forEach(t => {
-          tasksState.activeTimers[t.id] = {
-            startTime: t.timerStartTime || null,
-            running: !!t.timerRunning,
-            elapsed: Number(t.totalTime || 0)
-          };
-        });
-
-        renderTaskStats();
-        renderTaskTabs();
-        renderTaskGrid();
-
-        if (tasksState.detailTaskId) {
-          const current = tasksState.tasks.find(x => x.id === tasksState.detailTaskId);
-          if (current) {
-            const progressPct = current.done ? 100 : getTaskProgressPct(current);
-            renderBigProgress(progressPct);
-            renderDetailSteps(current, progressPct);
-            renderDetailTimerUI(current);
-          }
-        }
-      },
-      (error) => {
-        console.error('❌ onSnapshot error:', error);
-        toast('❌ Real-time sync error: ' + error.message, 'error');
       }
-    );
+
+      tasksState.tasks = tasks;
+      tasksState.tasks.sort((a, b) => {
+        if (a.done !== b.done) return a.done ? 1 : -1;
+        return (a.dueDate || '').localeCompare(b.dueDate || '');
+      });
+
+      tasksState.activeTimers = {};
+      tasksState.tasks.forEach(t => {
+        tasksState.activeTimers[t.id] = {
+          startTime: t.timerStartTime || null,
+          running: !!t.timerRunning,
+          elapsed: Number(t.totalTime || 0)
+        };
+      });
+
+      renderTaskStats();
+      renderTaskTabs();
+      renderTaskGrid();
+
+      if (tasksState.detailTaskId) {
+        const current = tasksState.tasks.find(x => x.id === tasksState.detailTaskId);
+        if (current) {
+          const progressPct = current.done ? 100 : getTaskProgressPct(current);
+          renderBigProgress(progressPct);
+          renderDetailSteps(current, progressPct);
+          renderDetailTimerUI(current);
+        }
+      }
+    };
+
+    tasksState._taskSnapshots = [];
+    const unsubscribeFunctions = [];
+
+    if (role === 'accountant' && user) {
+      const taskQueries = [
+        query(collection(db, 'tasks'), where('assignedTo', '==', user.uid)),
+        ...(user.email ? [query(collection(db, 'tasks'), where('assignedTo', '==', user.email))] : []),
+        query(collection(db, 'tasks'), where('assignedTo', 'array-contains', user.uid)),
+        ...(user.email ? [query(collection(db, 'tasks'), where('assignedTo', 'array-contains', user.email))] : [])
+      ];
+
+      taskQueries.forEach((taskQuery, index) => {
+        unsubscribeFunctions.push(onSnapshot(taskQuery, snapshot => {
+          tasksState._taskSnapshots[index] = snapshot;
+          mergeTaskSnapshots();
+        }, () => mergeTaskSnapshots()));
+      });
+    } else if (role === 'admin') {
+      unsubscribeFunctions.push(onSnapshot(collection(db, 'tasks'), snapshot => {
+        tasksState._taskSnapshots = [snapshot];
+        mergeTaskSnapshots();
+      }, () => mergeTaskSnapshots()));
+    } else {
+      tasksState._taskSnapshots = [];
+      tasksState.tasks = [];
+      renderTaskStats();
+      renderTaskTabs();
+      renderTaskGrid();
+    }
+
+    tasksState.unsubscribe = unsubscribeFunctions;
 
     if (!tasksState.tickInterval) {
       tasksState.tickInterval = setInterval(updateAllTaskTimers, 1000);
@@ -226,6 +263,13 @@ function getFilteredTasks() {
   weekEnd.setDate(weekEnd.getDate() + 7);
   const weekEndStr = weekEnd.toISOString().slice(0, 10);
   let list = tasksState.tasks.slice();
+  if ((window.currentUserRole || '').toLowerCase() === 'accountant') {
+    const user = window.firebaseAuth?.currentUser;
+    list = list.filter(task => {
+      const assigned = Array.isArray(task.assignedTo) ? task.assignedTo : [task.assignedTo];
+      return !!user && (assigned.includes(user.uid) || (user.email && assigned.includes(user.email)));
+    });
+  }
 
   if (tasksState.filterTab === 'today') list = list.filter(t => !t.done && t.dueDate === today);
   else if (tasksState.filterTab === 'week') list = list.filter(t => !t.done && t.dueDate && t.dueDate <= weekEndStr);
@@ -801,6 +845,10 @@ async function markTaskDone() {
 
 /* ==================== CREATE / EDIT MODAL ==================== */
 function openCreateTaskModal() {
+  if (!isAdmin()) {
+    toast('❌ শুধু Admin task create করতে পারবে', 'error');
+    return;
+  }
   tasksState.editingTaskId = null;
   document.getElementById('tkModalTitle').textContent = '➕ Create New Task';
   document.getElementById('tkFldTitle').value = '';
@@ -816,7 +864,7 @@ function openCreateTaskModal() {
     const profiles = window.__userProfiles || {};
     
     Object.values(profiles).forEach(u => {
-      if (u.uid && u.name && u.role !== 'accountant') {
+      if (u.uid && u.name) {
         optionsHtml += `<option value="${u.uid}">👤 ${esc(u.name)}</option>`;
       }
     });
@@ -866,7 +914,7 @@ async function editTask(taskId, event) {
     const profiles = window.__userProfiles || {};
     
     Object.values(profiles).forEach(u => {
-      if (u.uid && u.name && u.role !== 'accountant') {
+      if (u.uid && u.name) {
         optionsHtml += `<option value="${u.uid}">👤 ${esc(u.name)}</option>`;
       }
     });
@@ -897,6 +945,10 @@ function setTaskPriority(priority, el) {
 }
 
 async function saveTask() {
+  if (!isAdmin() && !tasksState.editingTaskId) {
+    toast('❌ শুধু Admin task create করতে পারবে', 'error');
+    return;
+  }
   const title = document.getElementById('tkFldTitle').value.trim();
   if (!title) {
     toast('❌ Task title required', 'error');

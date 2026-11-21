@@ -60,7 +60,6 @@ window.__userProfiles = window.__userProfiles || {};
 async function refreshUserProfiles() {
   try {
     await dbGetAllUserProfiles();
-    console.log('✅ User profiles loaded');
   } catch (e) {
     console.warn('refreshUserProfiles failed:', e);
   }

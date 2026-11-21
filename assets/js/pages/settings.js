@@ -120,6 +120,16 @@ async function loadSettingsForm() {
     }
 
     // ---- Linked providers ----
+    const hasPasswordProvider = user?.providerData?.some(provider => provider.providerId === 'password');
+    const currentPasswordField = $('currentPasswordField');
+    const passwordHint = $('passwordChangeHint');
+    if (currentPasswordField) currentPasswordField.style.display = hasPasswordProvider ? '' : 'none';
+    if (passwordHint) {
+      passwordHint.textContent = hasPasswordProvider
+        ? 'Current password দিয়ে verify করে নতুন password দিন।'
+        : 'Google account verify করে নতুন password যোগ করুন।';
+    }
+
     if (typeof renderAccountInfo === 'function') {
       setTimeout(renderAccountInfo, 100);
     }
@@ -131,6 +141,11 @@ async function loadSettingsForm() {
 /* ==================== SAVE SETTINGS ==================== */
 async function saveSettings() {
   try {
+    if (!isAdmin()) {
+      toast('❌ শুধু Admin settings পরিবর্তন করতে পারবেন', 'error');
+      return;
+    }
+
     const user = window.firebaseAuth?.currentUser;
     if (!user) {
       toast('❌ লগইন করুন', 'error');
@@ -197,6 +212,66 @@ async function saveSettings() {
   } catch (e) {
     console.error('Save settings failed:', e);
     toast('Save failed: ' + e.message, 'error');
+  }
+}
+
+async function changeAccountPassword() {
+  const user = window.firebaseAuth?.currentUser;
+  const currentPassword = $('currentAccountPassword')?.value || '';
+  const newPassword = $('newAccountPassword')?.value || '';
+  const confirmPassword = $('confirmAccountPassword')?.value || '';
+
+  if (!user?.email) {
+    toast('❌ Password পরিবর্তনের জন্য account email পাওয়া যায়নি', 'error');
+    return;
+  }
+  if (newPassword.length < 6) {
+    toast('❌ নতুন password কমপক্ষে ৬ অক্ষরের হতে হবে', 'error');
+    return;
+  }
+  if (newPassword !== confirmPassword) {
+    toast('❌ নতুন password দুটো মিলছে না', 'error');
+    return;
+  }
+
+  const hasPasswordProvider = user.providerData.some(provider => provider.providerId === 'password');
+  const authFns = window.firebaseAuthFns || {};
+
+  try {
+    showLoading('Updating password...');
+    if (hasPasswordProvider) {
+      if (!currentPassword) {
+        toast('❌ Current password দিন', 'error');
+        return;
+      }
+      const credential = authFns.EmailAuthProvider.credential(user.email, currentPassword);
+      await authFns.reauthenticateWithCredential(user, credential);
+      await authFns.updatePassword(user, newPassword);
+    } else if (user.providerData.some(provider => provider.providerId === 'google.com')) {
+      await authFns.reauthenticateWithPopup(user, new authFns.GoogleAuthProvider());
+      const credential = authFns.EmailAuthProvider.credential(user.email, newPassword);
+      await authFns.linkWithCredential(user, credential);
+    } else {
+      throw new Error('এই sign-in method-এর জন্য password set করা যাবে না।');
+    }
+
+    $('currentAccountPassword').value = '';
+    $('newAccountPassword').value = '';
+    $('confirmAccountPassword').value = '';
+    toast('✅ Password সফলভাবে update হয়েছে', 'success');
+  } catch (error) {
+    const messages = {
+      'auth/wrong-password': 'Current password ভুল হয়েছে।',
+      'auth/invalid-credential': 'Current password সঠিক নয়।',
+      'auth/weak-password': 'নতুন password আরও শক্তিশালী দিন।',
+      'auth/requires-recent-login': 'নিরাপত্তার জন্য logout করে আবার login করুন।',
+      'auth/credential-already-in-use': 'এই email-এর password অন্য account-এ linked আছে।',
+      'auth/provider-already-linked': 'এই account-এ password sign-in আগে থেকেই আছে।',
+      'auth/popup-closed-by-user': 'Google verification বাতিল হয়েছে।'
+    };
+    toast('❌ ' + (messages[error.code] || error.message || 'Password update করা যায়নি'), 'error');
+  } finally {
+    hideLoading();
   }
 }
 
@@ -563,10 +638,10 @@ function updateStaffRoleInfo(role) {
       title: '💼 Accountant Permissions:',
       items: [
         '✅ Accounts & Ledger (Full access)',
+        '✅ Analytics, Reports, Tasks',
         '✅ Documents (Upload + own delete)',
-        '✅ Reports (Financial only)',
-        '❌ Dashboard, Packages, Customers — No access',
-        '❌ Settings, Staff Management — No access'
+        '✅ Settings-এর শুধু Account Security অংশ',
+        '❌ Company Settings, Staff Management, অন্য pages — No access'
       ]
     },
     staff: {
@@ -577,9 +652,9 @@ function updateStaffRoleInfo(role) {
       items: [
         '✅ Reports (View only)',
         '✅ Documents (View + Upload)',
+        '✅ Settings-এর শুধু Account Security অংশ',
         '❌ Accounts & Ledger — No access',
-        '❌ Dashboard, Packages, Customers — No access',
-        '❌ Settings, Staff Management — No access'
+        '❌ Dashboard, Packages, Customers, Staff Management — No access'
       ]
     }
   };

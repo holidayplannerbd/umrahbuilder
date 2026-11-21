@@ -51,7 +51,6 @@ function startNotificationsListener() {
     const { doc, onSnapshot } = window.firebaseFns;
     const notifRef = doc(window.firebaseDB, 'settings', 'notifications');
 
-    console.log('🔔 Starting notification listener...');
 
     NOTIF_STATE.unsubscribe = onSnapshot(
       notifRef,
@@ -116,7 +115,6 @@ function startNotificationsListener() {
 let fallbackInterval = null;
 function startFallbackPolling() {
   if (fallbackInterval) return;
-  console.log('📡 Fallback polling every 15s');
   fallbackInterval = setInterval(loadNotifications, 15000);
 }
 

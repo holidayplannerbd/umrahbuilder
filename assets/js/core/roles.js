@@ -27,7 +27,7 @@ const ROLE_PERMISSIONS = {
     canDeletePackage: true
   },
   accountant: {
-    pages: ['accounts', 'documents', 'reports'],
+    pages: ['accounts', 'analytics', 'reports', 'tasks', 'documents', 'settings'],
     canAddPayment: true,
     canAddRefund: true,
     canPayVendor: true,
@@ -40,7 +40,7 @@ const ROLE_PERMISSIONS = {
     canDeletePackage: false
   },
   staff: {
-    pages: ['documents', 'reports'],
+    pages: ['documents', 'reports', 'settings'],
     canAddPayment: false,
     canAddRefund: false,
     canPayVendor: false,
@@ -70,7 +70,6 @@ async function loadUserRole() {
 
     /* Wait for DB ready */
     if (!window.firebaseDB) {
-      console.log('⏳ DB not ready, retrying in 500ms...');
       await new Promise(r => setTimeout(r, 500));
     }
 
@@ -85,7 +84,6 @@ async function loadUserRole() {
     window.currentUserRole = role;
     window.currentUserPermissions = ROLE_PERMISSIONS[role];
 
-    console.log('🎭 User Role:', role, '· Pages:', window.currentUserPermissions.pages);
     return role;
   } catch (e) {
     console.warn('loadUserRole failed:', e);
@@ -122,6 +120,18 @@ function isStaff() {
 function applyRoleToSidebar() {
   const perms = window.currentUserPermissions || ROLE_PERMISSIONS.admin;
   const allowedPages = perms.pages;
+
+  const settingsCard = document.querySelector('#page-settings .content-card');
+  if (settingsCard) {
+    settingsCard.querySelectorAll('.section').forEach(section => {
+      section.style.display = isAdmin() || section.id === 'accountSecuritySection' ? '' : 'none';
+    });
+    Array.from(settingsCard.children).forEach(child => {
+      if (child.tagName === 'BUTTON') {
+        child.style.display = isAdmin() ? '' : 'none';
+      }
+    });
+  }
 
   /* 1. Hide/Show sidebar items by data-page */
   document.querySelectorAll('.ni[data-page]').forEach(item => {
@@ -167,6 +177,11 @@ function applyRoleToSidebar() {
         btn.style.display = 'none';
       }
     });
+
+    if (!isAdmin()) {
+      const createTaskButton = document.getElementById('tkCreateTaskButton');
+      if (createTaskButton) createTaskButton.style.display = 'none';
+    }
 
     /* Hide Quick Start card */
     document.querySelectorAll('.quick-card').forEach(el => {

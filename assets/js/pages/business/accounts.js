@@ -345,7 +345,7 @@ function openRefundModal(preselectedCustomerId = null, preselectedPackageId = nu
             </div>
             <div class="field">
               <label>Date</label>
-              <input type="date" id="refundDate" value="${today()}">
+              <input type="date" id="refundDate">
             </div>
             <div class="field">
               <label>Method</label>
@@ -390,6 +390,7 @@ function openRefundModal(preselectedCustomerId = null, preselectedPackageId = nu
     </div>
   `;
   document.getElementById('modalsContainer').insertAdjacentHTML('beforeend', html);
+  if ($('refundDate')) $('refundDate').value = today();
   updateRefundSummary();
 }
 

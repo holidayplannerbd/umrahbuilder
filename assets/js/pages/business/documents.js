@@ -231,7 +231,7 @@ function openDocumentUpload() {
 
             <div class="field">
               <label>Date</label>
-              <input type="date" id="docDate" value="${today()}">
+              <input type="date" id="docDate">
             </div>
 
             <div class="field" style="grid-column:1/-1">
@@ -263,6 +263,7 @@ function openDocumentUpload() {
     </div>
   `;
   document.getElementById('modalsContainer').insertAdjacentHTML('beforeend', html);
+  if ($('docDate')) $('docDate').value = today();
 }
 
 /* ==================== PREVIEW FILE ==================== */

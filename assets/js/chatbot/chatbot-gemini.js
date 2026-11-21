@@ -6,7 +6,7 @@
 let GEMINI_CONFIG = {
   apiKey: null,
   enabled: false,
-  model: 'gemini-2.5-flash',
+  model: null,
   loaded: false
 };
 
@@ -16,38 +16,8 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 /* ==================== LOAD CONFIG ==================== */
 async function loadGeminiConfig() {
-  try {
-    const { doc, getDoc } = window.firebaseFns;
-    const snap = await getDoc(doc(window.firebaseDB, 'settings', 'gemini_config'));
-
-    if (!snap.exists()) {
-      console.log('ℹ️ Gemini config not found in Firestore');
-      return;
-    }
-
-    const data = snap.data();
-    console.log('🔍 Raw Gemini config:', data);
-
-    let config = data;
-    if (data.value && typeof data.value === 'object' && data.value.apiKey) {
-      config = data.value;
-    }
-
-    if (config && config.apiKey && config.enabled === true) {
-      GEMINI_CONFIG.apiKey = config.apiKey;
-      GEMINI_CONFIG.enabled = true;
-      GEMINI_CONFIG.model = config.model || 'gemini-2.5-flash';
-      GEMINI_CONFIG.loaded = true;
-      console.log('✅ Gemini AI loaded · model:', GEMINI_CONFIG.model);
-    } else {
-      console.log('ℹ️ Gemini config incomplete:', {
-        hasApiKey: !!config?.apiKey,
-        enabled: config?.enabled
-      });
-    }
-  } catch (e) {
-    console.warn('❌ Gemini config load failed:', e);
-  }
+  // AI keys must never be stored or sent from the browser.
+  GEMINI_CONFIG = { apiKey: null, enabled: false, model: null, loaded: false };
 }
 
 /* ==================== SHORT BUSINESS CONTEXT (Fast) ==================== */
@@ -117,74 +87,7 @@ function buildLiveDataSnapshot(userQuery) {
 
 /* ==================== CALL GEMINI API (Optimized) ==================== */
 async function callGeminiAPI(userMessage) {
-  if (!GEMINI_CONFIG.enabled || !GEMINI_CONFIG.apiKey) {
-    throw new Error('Gemini AI not configured');
-  }
-
-  /* ⭐ Check Cache */
-  const cacheKey = userMessage.toLowerCase().trim();
-  const cached = GEMINI_CACHE.get(cacheKey);
-  if (cached && (Date.now() - cached.time) < CACHE_TTL) {
-    console.log('⚡ Cache hit:', cacheKey);
-    return cached.response;
-  }
-
-  const systemPrompt = buildBusinessContext();
-  const dataSnapshot = buildLiveDataSnapshot(userMessage);
-  const fullPrompt = `${systemPrompt}${dataSnapshot}\n\nUSER: ${userMessage}\n\nASSISTANT:`;
-
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_CONFIG.model}:generateContent`;
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-goog-api-key': GEMINI_CONFIG.apiKey
-    },
-    body: JSON.stringify({
-      contents: [{
-        parts: [{ text: fullPrompt }]
-      }],
-      generationConfig: {
-        temperature: 0.8,
-        maxOutputTokens: 200,
-        topP: 0.9,
-        topK: 20
-      },
-      safetySettings: [
-        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
-      ]
-    })
-  });
-
-  if (!response.ok) {
-    const err = await response.text();
-    console.error('Gemini API error:', err);
-    throw new Error(`API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-
-  if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.text) {
-    console.error('Invalid API response:', data);
-    throw new Error('Invalid API response');
-  }
-
-  const aiText = data.candidates[0].content.parts[0].text;
-
-  /* ⭐ Save to Cache */
-  GEMINI_CACHE.set(cacheKey, { response: aiText, time: Date.now() });
-
-  /* ⭐ Keep cache small (max 50 items) */
-  if (GEMINI_CACHE.size > 50) {
-    const firstKey = GEMINI_CACHE.keys().next().value;
-    GEMINI_CACHE.delete(firstKey);
-  }
-
-  return aiText;
+  throw new Error('Secure AI endpoint is not configured');
 }
 
 /* ==================== SMART CHATBOT PROCESS ==================== */
@@ -203,7 +106,6 @@ async function geminiChatbotProcess(text) {
 /* ==================== CLEAR CACHE (utility) ==================== */
 function clearGeminiCache() {
   GEMINI_CACHE.clear();
-  console.log('🗑️ Gemini cache cleared');
 }
 window.clearGeminiCache = clearGeminiCache;
 

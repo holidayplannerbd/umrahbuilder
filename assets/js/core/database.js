@@ -3,24 +3,27 @@
    ============================================================ */
 
 let db = null;
+const settingsCache = new Map();
+const collectionCache = new Map();
 
 /* ==================== INIT ==================== */
 async function openDB() {
   return new Promise((resolve, reject) => {
     let tries = 0;
-    const check = setInterval(() => {
+    const check = () => {
       tries++;
       if (window.firebaseDB) {
         db = window.firebaseDB;
-        clearInterval(check);
-        console.log('✅ Firestore connected');
         resolve(db);
+        return;
       }
       if (tries > 50) {
-        clearInterval(check);
         reject(new Error('Firebase not loaded. Check your config.'));
+        return;
       }
-    }, 100);
+      setTimeout(check, 100);
+    };
+    check();
   });
 }
 
@@ -30,16 +33,20 @@ async function dbSave(storeName, data) {
   const { doc, setDoc } = window.firebaseFns;
   const id = String(data.id);
   await setDoc(doc(db, storeName, id), data);
+  collectionCache.delete(storeName);
+  if (storeName === 'settings') settingsCache.delete(data.id || data.key);
   return id;
 }
 
 /* ==================== GET ALL ==================== */
 async function dbGetAll(storeName) {
   if (!db) throw new Error('DB not ready');
+  if (collectionCache.has(storeName)) return collectionCache.get(storeName);
   const { collection, getDocs } = window.firebaseFns;
   const snapshot = await getDocs(collection(db, storeName));
   const arr = [];
   snapshot.forEach(doc => arr.push({ ...doc.data(), id: doc.data().id || doc.id }));
+  collectionCache.set(storeName, arr);
   return arr;
 }
 
@@ -48,6 +55,7 @@ async function dbDelete(storeName, id) {
   if (!db) throw new Error('DB not ready');
   const { doc, deleteDoc } = window.firebaseFns;
   await deleteDoc(doc(db, storeName, String(id)));
+  collectionCache.delete(storeName);
 }
 
 /* ==================== SETTINGS (Global) ==================== */
@@ -55,13 +63,20 @@ async function dbSaveSetting(key, value) {
   if (!db) throw new Error('DB not ready');
   const { doc, setDoc } = window.firebaseFns;
   await setDoc(doc(db, 'settings', key), { key, value, savedAt: Date.now() });
+  settingsCache.set(key, value);
 }
 
 async function dbGetSetting(key) {
   if (!db) throw new Error('DB not ready');
+  if (settingsCache.has(key)) return settingsCache.get(key);
   const { doc, getDoc } = window.firebaseFns;
   const snap = await getDoc(doc(db, 'settings', key));
-  if (snap.exists()) return snap.data().value;
+  if (snap.exists()) {
+    const value = snap.data().value;
+    settingsCache.set(key, value);
+    return value;
+  }
+  settingsCache.set(key, undefined);
   return undefined;
 }
 
@@ -125,7 +140,6 @@ async function dbSaveUserProfile(data) {
     updatedAt: Date.now()
   });
 
-  console.log('✅ User profile saved:', data.name || existing.name || '(no name)');
 }
 
 /* ⭐ বর্তমান ইউজারের profile পড়া */
@@ -153,6 +167,5 @@ async function dbGetAllUserProfiles() {
   });
 
   window.__userProfiles = profiles;
-  console.log('✅ Loaded', Object.keys(profiles).length, 'user profiles');
   return profiles;
 }

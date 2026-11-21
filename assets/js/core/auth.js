@@ -59,7 +59,6 @@ async function linkGoogleAccount() {
     if (typeof showLoading === 'function') showLoading('Linking Google account...');
 
     const result = await linkWithPopup(user, provider);
-    console.log('✅ Google linked:', result.user.email);
 
     if (typeof hideLoading === 'function') hideLoading();
 

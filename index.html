@@ -4,15 +4,28 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🕋 Umrah Builder — Dashboard</title>
+<script>
+  // Prevent routine application diagnostics from exposing data in production console.
+  if (location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+    console.log = function () {};
+    console.info = function () {};
+    console.debug = function () {};
+    console.warn = function () {};
+    console.error = function () {};
+  }
+</script>
 
 <!-- FONTS -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <!-- EXTERNAL LIBRARIES -->
-<script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <!-- CSS -->
 <link rel="stylesheet" href="assets/css/main.css">
@@ -148,10 +161,10 @@
 
   <div class="profile-box">
     <img class="profile-avatar" id="sideAvatar" src="" alt="" style="object-fit:cover;display:none">
-    <div class="profile-avatar" id="sideAvatarFallback">A</div>
+    <div class="profile-avatar" id="sideAvatarFallback">U</div>
     <div class="profile-info">
-      <div class="name" id="sideName">Admin</div>
-      <div class="email" id="sideEmail">admin@umrah.com</div>
+      <div class="name" id="sideName">User</div>
+      <div class="email" id="sideEmail"></div>
     </div>
     <button class="logout-btn" onclick="logout()" aria-label="Logout" title="Logout">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -162,7 +175,7 @@
   <main class="mn">
     <div class="topbar">
       <div class="page-title-wrap">
-        <h1 class="page-greeting" id="pageTitle">Welcome back, <span>Admin!</span></h1>
+        <h1 class="page-greeting" id="pageTitle">Welcome back, <span>User!</span></h1>
         <div class="page-subtitle" id="pageSubtitle">Overview of your Umrah business</div>
       </div>
       <div class="topbar-right">
@@ -285,7 +298,7 @@
               <img id="anAvatarImg" src="" alt="" style="display:none">
               <div id="anAvatarFallback" class="an-avatar-fallback">A</div>
             </div>
-            <div><div class="an-profile-name" id="anProfileName">Admin</div><div class="an-profile-role" id="anProfileRole">Travel Agent</div></div>
+            <div><div class="an-profile-name" id="anProfileName">User</div><div class="an-profile-role" id="anProfileRole">Travel Agent</div></div>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn btn-secondary btn-sm" onclick="exportAnalyticsExcel()">📥 Export Excel</button>
@@ -508,7 +521,7 @@
         <div class="section"><div class="section-header"><div class="left"><div class="num">1</div><h3>👤 User Profile</h3></div></div>
           <div class="section-body">
             <div class="profile-upload-wrap">
-              <div class="profile-pic-preview" id="profilePicPreview"><span id="profilePicFallback">A</span></div>
+              <div class="profile-pic-preview" id="profilePicPreview"><span id="profilePicFallback">U</span></div>
               <div>
                 <input type="file" id="userPicInput" accept="image/*" style="display:none" onchange="uploadUserPic(event)">
                 <button class="btn btn-primary btn-sm" onclick="document.getElementById('userPicInput').click()">📷 Upload Photo</button>
@@ -517,8 +530,8 @@
               </div>
             </div>
             <div class="grid-2" style="margin-top:16px">
-              <div class="field"><label>Your Name</label><input type="text" id="setUserName" value="Admin" oninput="updateDashboardName()"></div>
-              <div class="field"><label>Your Email</label><input type="email" id="setUserEmail" value="admin@umrah.com"></div>
+              <div class="field"><label>Your Name</label><input type="text" id="setUserName" value="" oninput="updateDashboardName()"></div>
+              <div class="field"><label>Your Email</label><input type="email" id="setUserEmail" value=""></div>
               <div class="field"><label>Your Phone</label><input type="text" id="setUserPhone" placeholder="01XXXXXXXXX"></div>
               <div class="field"><label>Your Role</label><input type="text" id="setUserRole" value="Travel Agent"></div>
             </div>
@@ -588,11 +601,21 @@ Cancellation within 24 hours: No refund</textarea></div>
             </div>
           </div>
         </div>
-        <div class="section"><div class="section-header"><div class="left"><div class="num">9</div><h3>🔐 Account Security</h3></div></div>
+        <div class="section" id="accountSecuritySection"><div class="section-header"><div class="left"><div class="num">9</div><h3>🔐 Account Security</h3></div></div>
           <div class="section-body">
             <div style="padding:16px;background:linear-gradient(135deg,var(--blue-bg),var(--card));border-radius:12px;border-left:3px solid var(--blue);margin-bottom:16px"><div style="font-size:12px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">🔗 Linked Sign-in Methods</div><div id="accountProviders"></div></div>
             <button class="btn btn-primary" onclick="linkGoogleAccount()" style="width:100%;justify-content:center"><span>🔵</span><span>Link Google Account</span></button>
             <div style="margin-top:12px;padding:10px 14px;background:var(--bg-2);border-radius:10px;font-size:11.5px;color:var(--text-2);line-height:1.7"><b>💡 একবার Google link করলে:</b><br>• Email + Password দিয়ে login করতে পারবেন<br>• Google button দিয়েও login করতে পারবেন<br>• দুটোই একই account, একই data</div>
+            <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
+              <h4 style="margin:0 0 12px">🔑 Change Password</h4>
+              <p id="passwordChangeHint" style="font-size:12px;color:var(--text-3);margin:0 0 12px">Current password দিয়ে verify করে নতুন password দিন।</p>
+              <div class="grid-2">
+                <div class="field" id="currentPasswordField"><label>Current Password</label><input type="password" id="currentAccountPassword" autocomplete="current-password"></div>
+                <div class="field"><label>New Password (কমপক্ষে ৬ অক্ষর)</label><input type="password" id="newAccountPassword" autocomplete="new-password"></div>
+                <div class="field"><label>Confirm New Password</label><input type="password" id="confirmAccountPassword" autocomplete="new-password"></div>
+              </div>
+              <button class="btn btn-primary" onclick="changeAccountPassword()" style="margin-top:12px">Update Password</button>
+            </div>
           </div>
         </div>
         <div class="section"><div class="section-header"><div class="left"><div class="num">10</div><h3>👥 Staff Management (Admin Only)</h3></div><button class="btn btn-primary btn-sm" onclick="openAddStaffModal()">➕ Add Staff</button></div>
@@ -694,7 +717,7 @@ Cancellation within 24 hours: No refund</textarea></div>
           <div class="tk-tasks-header-icon">✅</div>
           <div><div class="tk-tasks-header-title">Tasks Manager</div><div class="tk-tasks-header-sub"><span class="tk-live-dot"></span><span id="tkLiveCount">Loading...</span></div></div>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="tk-btn tk-btn-primary" onclick="openCreateTaskModal()">➕ New Task</button></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button id="tkCreateTaskButton" class="tk-btn tk-btn-primary" onclick="openCreateTaskModal()">➕ New Task</button></div>
       </div>
       <div class="tk-stats-row">
         <div class="tk-stat-box"><div class="tk-stat-box-icon" style="background:var(--red-bg);color:var(--red)">🔴</div><div class="tk-stat-box-value" id="tkStatOverdue">0</div><div class="tk-stat-box-label">Overdue</div></div>
@@ -1652,7 +1675,7 @@ Cancellation within 24 hours: No refund</textarea></div>
         </div>
         <div class="field">
           <label>Invoice Date</label>
-          <input type="date" id="invDate" value="${today()}">
+          <input type="date" id="invDate">
         </div>
         <div class="field">
           <label>Service Type</label>
@@ -1794,7 +1817,7 @@ Cancellation within 24 hours: No refund</textarea></div>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
-  import { getAuth, onAuthStateChanged, signOut, GoogleAuthProvider, linkWithPopup, updateProfile } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+  import { getAuth, onAuthStateChanged, signOut, GoogleAuthProvider, linkWithPopup, updateProfile, EmailAuthProvider, reauthenticateWithCredential, reauthenticateWithPopup, linkWithCredential, updatePassword } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
   const firebaseConfig = { apiKey: "AIzaSyAQU6J2Wjb9lHiZEvyKB2q1D5aHKAz9jAo", authDomain: "umrah-package-builder.firebaseapp.com", projectId: "umrah-package-builder", storageBucket: "umrah-package-builder.firebasestorage.app", messagingSenderId: "867591484402", appId: "1:867591484402:web:295974892b167e4743716b" };
   const app = initializeApp(firebaseConfig);
   const firestore = getFirestore(app);
@@ -1802,13 +1825,16 @@ Cancellation within 24 hours: No refund</textarea></div>
   window.firebaseDB = firestore;
   window.firebaseAuth = auth;
   window.firebaseFns = { doc, setDoc, getDoc, collection, getDocs, deleteDoc, query, where, onSnapshot };
-  window.firebaseAuthFns = { onAuthStateChanged, signOut, GoogleAuthProvider, linkWithPopup, updateProfile };
+  window.firebaseAuthFns = { onAuthStateChanged, signOut, GoogleAuthProvider, linkWithPopup, updateProfile, EmailAuthProvider, reauthenticateWithCredential, reauthenticateWithPopup, linkWithCredential, updatePassword };
   window.firebaseReady = true;
-  console.log('🔥 Firebase ready');
 
   const SESSION_TIMEOUT_MS = 10 * 60 * 60 * 1000;
   const SESSION_KEY = 'umrah_session_start';
   let sessionTimer = null;
+  let resolveAuthStateReady;
+  window.firebaseAuthStateReady = new Promise(resolve => {
+    resolveAuthStateReady = resolve;
+  });
 
   function startSessionTimer() {
     let startTime = parseInt(localStorage.getItem(SESSION_KEY) || '0');
@@ -1821,13 +1847,29 @@ Cancellation within 24 hours: No refund</textarea></div>
   }
 
   onAuthStateChanged(auth, (user) => {
-    if (!user) { localStorage.removeItem(SESSION_KEY); if (sessionTimer) clearTimeout(sessionTimer); window.location.href = 'login.html'; } 
+    if (!user) {
+      localStorage.removeItem(SESSION_KEY);
+      if (sessionTimer) clearTimeout(sessionTimer);
+      resolveAuthStateReady(null);
+      window.location.href = 'login.html';
+    }
     else {
-      window.currentUser = user;
-      document.body.classList.add('auth-ready');
-      startSessionTimer();
-      if (typeof updateUserUI === 'function') setTimeout(updateUserUI, 300);
-      if (typeof initUserRole === 'function') setTimeout(initUserRole, 400);
+      getDoc(doc(firestore, 'userProfiles', user.uid)).then((profileSnap) => {
+        if (!profileSnap.exists()) {
+          resolveAuthStateReady(null);
+          signOut(auth).finally(() => window.location.href = 'login.html');
+          return;
+        }
+        window.currentUser = user;
+        document.body.classList.add('auth-ready');
+        startSessionTimer();
+        resolveAuthStateReady(user);
+        if (typeof updateUserUI === 'function') setTimeout(updateUserUI, 300);
+        if (typeof initUserRole === 'function') setTimeout(initUserRole, 400);
+      }).catch(() => {
+        resolveAuthStateReady(null);
+        signOut(auth).finally(() => window.location.href = 'login.html');
+      });
     }
   });
 </script>

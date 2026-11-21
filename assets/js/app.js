@@ -4,13 +4,42 @@
 
 async function init() {
   try {
+    if (window.firebaseAuthStateReady) {
+      const user = await window.firebaseAuthStateReady;
+      if (!user) return;
+    }
     await openDB();
 
+    if (window.firebaseAuth?.currentUser && typeof loadUserRole === 'function') {
+      await loadUserRole();
+    }
+    if (typeof updateUserUI === 'function') await updateUserUI();
+
+    const role = (window.currentUserRole || 'admin').toLowerCase();
+
+    if (role === 'admin') {
+      try {
+        await dbDelete(STORES.settings, 'gemini_config');
+      } catch (e) {}
+    }
+
+    const getForAdmin = async (storeName) => role === 'admin' ? dbGetAll(storeName) : [];
+    const getForAdminAndAccountant = async (storeName) =>
+      role === 'admin' || role === 'accountant' ? dbGetAll(storeName) : [];
+
     const [mk, md, f, t, v, z, sv, p, c, vend, pay, fu] = await Promise.all([
-      dbGetAll(STORES.makkahHotels), dbGetAll(STORES.madinahHotels), dbGetAll(STORES.flights),
-      dbGetAll(STORES.transports), dbGetAll(STORES.visas), dbGetAll(STORES.ziyarah),
-      dbGetAll(STORES.services), dbGetAll(STORES.packages), dbGetAll(STORES.customers),
-      dbGetAll(STORES.vendors), dbGetAll(STORES.payments), dbGetAll(STORES.followups)
+      getForAdmin(STORES.makkahHotels),
+      getForAdmin(STORES.madinahHotels),
+      getForAdmin(STORES.flights),
+      getForAdmin(STORES.transports),
+      getForAdmin(STORES.visas),
+      getForAdmin(STORES.ziyarah),
+      getForAdmin(STORES.services),
+      dbGetAll(STORES.packages),
+      getForAdminAndAccountant(STORES.customers),
+      getForAdminAndAccountant(STORES.vendors),
+      getForAdminAndAccountant(STORES.payments),
+      getForAdmin(STORES.followups)
     ]);
 
     STORE.makkahHotels = mk; STORE.madinahHotels = md; STORE.flights = f;
@@ -19,12 +48,14 @@ async function init() {
     STORE.payments = pay; STORE.followups = fu;
 
     if (typeof loadChatState === 'function') loadChatState();
-    if (typeof loadTheme === 'function') await loadTheme();
-    if (typeof refreshUserProfiles === 'function') await refreshUserProfiles();
+    await Promise.all([
+      typeof loadTheme === 'function' ? loadTheme() : Promise.resolve(),
+      typeof refreshUserProfiles === 'function' ? refreshUserProfiles() : Promise.resolve(),
+      typeof loadSettingsForm === 'function' ? loadSettingsForm() : Promise.resolve()
+    ]);
     if (typeof updateSidebarBadges === 'function') updateSidebarBadges();
-    if (typeof loadSettingsForm === 'function') await loadSettingsForm();
 
-    (async () => {
+    if (role === 'admin') (async () => {
       let transportFixed = 0;
       for (const t of STORE.transports) {
         const correctCap = VEHICLE_CAPACITY[t.vehicle];
@@ -87,7 +118,7 @@ async function init() {
 }
 
 window.addEventListener('load', () => {
-  setTimeout(init, 400);
+  init();
 });
 
 async function runMigration() {
